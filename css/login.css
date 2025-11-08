@@ -1,0 +1,308 @@
+/* === LOGIN PAGE === */
+:root {
+  --primary-color: #5b35f2;
+  --secondary-color: #edf5fa;
+  --text-color: #333;
+  --gray-text: #555;
+  --border-radius: 6px;
+  --transition: 0.3s ease;
+}
+
+body {
+  font-family: 'Lato', sans-serif;
+  color: var(--text-color);
+  background-color: var(--secondary-color);
+  margin: 0;
+  padding: 0;
+}
+
+
+.login-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* LADO IZQUIERDO */
+.login-left {
+  flex: 1;
+  background-color: #edf5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.welcome-text {
+  text-align: left;
+  max-width: 400px;
+}
+
+.welcome-text h2 {
+  color: #333;
+  font-size: 28px;
+  margin-bottom: 15px;
+}
+
+.welcome-text p {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.login-illustration {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* LADO DERECHO */
+.login-right {
+  flex: 1;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.portal-logo {
+  height: 60px;
+  margin-bottom: 20px;
+}
+
+.login-card h2 {
+  color: #333;
+}
+
+.login-card p {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* INPUTS */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 40px 12px 15px; /* Espacio a la derecha para el icono */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+.input-group i {
+  position: absolute;
+  right: 12px;
+  color: #777;
+  cursor: pointer;
+}
+
+
+.input-icon {
+  position: relative;
+}
+
+.input-icon i {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  color: #888;
+}
+
+.input-icon input {
+  width: 100%;
+  padding: 10px 35px 10px 35px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.toggle-password {
+  right: 10px;
+  left: auto !important;
+  cursor: pointer;
+}
+
+/* BOTÓN */
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #d5e5f0;
+  color: #fff;
+  font-size: 16px;
+  cursor: not-allowed;
+  transition: background 0.3s;
+}
+
+button.active {
+  background-color: #5b35f2;
+  cursor: pointer;
+}
+
+.reset-link {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  color: #5b35f2;
+  text-decoration: none;
+  margin-bottom: 15px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .login-left {
+    display: none;
+  }
+
+  .login-right {
+    flex: 1;
+    background-color: #fff;
+  }
+}
+
+/* --- INPUTS CON ICONOS --- */
+.input-icon {
+  position: relative;
+}
+
+.input-icon input {
+  width: 100%;
+  padding: 12px 40px 12px 40px; /* espacio para íconos */
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  outline: none;
+  transition: border var(--transition);
+}
+
+.input-icon input:focus {
+  border-color: var(--primary-color);
+}
+
+.icon-left {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 15px;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: #888;
+  cursor: pointer;
+  font-size: 15px;
+  transition: color var(--transition);
+}
+
+.toggle-password:hover {
+  color: var(--primary-color);
+}
+
+/* Agrupa cada campo */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px; /* separación entre los grupos */
+}
+
+/* Etiquetas y texto de ejemplo */
+.form-group label {
+  font-size: 14px;
+  color: #000;
+}
+
+.hint {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+
+/* Input + iconos */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px 38px 10px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: 'Lato', sans-serif;
+}
+
+.input-group i {
+  position: absolute;
+  right: 12px;
+  color: #6c757d;
+  cursor: pointer;
+}
+
+/* Separación entre campos, enlace y botón */
+.reset-link {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #5b35f2;
+  text-decoration: none;
+  text-align: right;
+}
+
+.reset-link:hover {
+  text-decoration: underline;
+}
+
+button#loginBtn {
+  margin-top: 16px; /* separa del resto */
+  padding: 10px;
+  width: 100%;
+  background-color: #d5e5f0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: background 0.3s ease;
+}
+
+button#loginBtn.active {
+  background-color: #5b35f2;
+  cursor: pointer;
+}
+
+/* Ícono del ojo */
+#togglePassword {
+  transition: transform 0.15s ease, color 0.3s ease;
+}
+
+#togglePassword:hover {
+  color: #5b35f2;
+}
+
+/* Efecto rebote */
+.pulse {
+  transform: scale(1.2);
+}
