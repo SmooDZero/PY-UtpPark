@@ -3,6 +3,9 @@ const db = require('../database/db');
 const { authenticateToken } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+const axios = require('axios');
+
+
 const router = express.Router();
 
 // Inicializar Google Gemini (si está configurado)
@@ -12,7 +15,7 @@ let model = null;
 if (process.env.GEMINI_API_KEY) {
   try {
     genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
     console.log('✅ Google Gemini inicializado correctamente');
   } catch (error) {
     console.warn('⚠️ Error al inicializar Google Gemini:', error.message);
@@ -161,8 +164,27 @@ async function buscarRespuesta(pregunta) {
   return buscarRespuestaEstatica(pregunta);
 }
 
+
+// Función para llamar a la API Python como alternativa
+async function llamarChatbotPython(pregunta) {
+  try {
+    const response = await axios.post("http://127.0.0.1:5000/ask", {
+      pregunta
+    });
+    return response.data.respuesta;
+  } catch (error) {
+    console.error("❌ Error comunicándose con la API Python:", error.message);
+    return null; // usar fallback si falla Python
+  }
+}
+
+
+
+
 // Endpoint del chatbot
-router.post('/pregunta', authenticateToken, async (req, res) => {
+//router.post('/pregunta', authenticateToken, async (req, res) => {
+  router.post('/pregunta', async (req, res) => {
+
   const { pregunta } = req.body;
 
   if (!pregunta || pregunta.trim().length === 0) {
@@ -170,13 +192,20 @@ router.post('/pregunta', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Obtener respuesta (IA o estática)
-    const respuesta = await buscarRespuesta(pregunta);
+    // 1️⃣ Llamar al chatbot Python primero
+    let respuesta = await llamarChatbotPython(pregunta);
 
-    // Guardar en historial
+    // 2️⃣ Si Python falla → usar fallback estático
+    if (!respuesta) {
+      respuesta = buscarRespuestaEstatica(pregunta);
+    }
+
+    // Guardar historial (usuario anónimo = 0)
+    const userId = req.user?.id ?? 0;
+
     db.run(
       'INSERT INTO chatbot_history (usuario_id, pregunta, respuesta) VALUES (?, ?, ?)',
-      [req.user.id, pregunta, respuesta],
+      [userId, pregunta, respuesta],
       (err) => {
         if (err) {
           console.error('Error al guardar historial:', err);
@@ -185,30 +214,33 @@ router.post('/pregunta', authenticateToken, async (req, res) => {
     );
 
     res.json({ respuesta });
+
   } catch (error) {
     console.error('Error en el chatbot:', error);
-    // En caso de error, usar respuesta estática
-    const respuestaFallback = buscarRespuestaEstatica(pregunta);
-    res.json({ respuesta: respuestaFallback });
+    res.json({ respuesta: buscarRespuestaEstatica(pregunta) });
   }
 });
 
 // Obtener historial del chatbot
-router.get('/historial', authenticateToken, (req, res) => {
-  db.all(
-    `SELECT pregunta, respuesta, created_at 
-     FROM chatbot_history 
-     WHERE usuario_id = ? 
-     ORDER BY created_at DESC 
-     LIMIT 20`,
-    [req.user.id],
-    (err, historial) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error al obtener historial' });
-      }
-      res.json(historial);
+//router.get('/historial', authenticateToken, (req, res) => {
+  router.get('/historial', async (req, res) => {
+
+  const userId = req.user?.id ?? 0;
+
+db.all(
+  `SELECT pregunta, respuesta, created_at 
+   FROM chatbot_history 
+   WHERE usuario_id = ? 
+   ORDER BY created_at DESC 
+   LIMIT 20`,
+  [userId],
+  (err, historial) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error al obtener historial' });
     }
-  );
+    res.json(historial);
+  }
+);
 });
 
 module.exports = router;

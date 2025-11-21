@@ -49,7 +49,7 @@ function getAuthHeaders() {
   };
 }
 
-// Hacer petición autenticada
+/*  Hacer petición autenticada
 async function authenticatedFetch(url, options = {}) {
   const headers = {
     ...getAuthHeaders(),
@@ -67,6 +67,31 @@ async function authenticatedFetch(url, options = {}) {
     window.location.href = '/login.html';
     return null;
   }
+
+  return response;
+}
+*/
+// ================================
+// authenticatedFetch CORREGIDO
+// ================================
+async function authenticatedFetch(url, options = {}) {
+  const token = getToken();
+
+  // Headers base
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers
+  };
+
+  // Solo agregar Authorization si SÍ existe un token real
+  if (token && token !== "null" && token !== "") {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/api${url}`, {
+    ...options,
+    headers
+  });
 
   return response;
 }

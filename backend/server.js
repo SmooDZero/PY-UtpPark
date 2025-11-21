@@ -1,7 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
+
+// CARGAR .env DESDE backend/.env SIEMPRE
+require('dotenv').config({ path: __dirname + '/.env' });
+
+console.log("DEBUG ENV KEY →", process.env.GEMINI_API_KEY);
+
+
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
