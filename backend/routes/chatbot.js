@@ -1,4 +1,4 @@
-const express = require('express');
+/*const express = require('express');
 const db = require('../database/db');
 const { authenticateToken } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -7,6 +7,8 @@ const axios = require('axios');
 
 
 const router = express.Router();
+
+
 
 // Inicializar Google Gemini (si está configurado)
 let genAI = null;
@@ -244,4 +246,85 @@ db.all(
 });
 
 module.exports = router;
+*/
+const express = require('express');
+const axios = require('axios'); // Importamos axios para hablar con Python
+const db = require('../database/db'); // Mantenemos db para guardar el historial
+// Si usas middleware de autenticación, mantenlo
+// const { authenticateToken } = require('../middleware/auth'); 
 
+const router = express.Router();
+
+// URL de tu API de Python (asegúrate que el puerto coincida con api.py)
+const PYTHON_API_URL = 'http://localhost:5000/ask';
+
+// Ruta para enviar la pregunta (POST)
+// Si tienes autenticación activa en el frontend, agrega authenticateToken como segundo parámetro
+router.post('/pregunta', async (req, res) => {
+    const { pregunta } = req.body;
+
+    if (!pregunta || pregunta.trim().length === 0) {
+        return res.status(400).json({ error: 'La pregunta es requerida' });
+    }
+
+    try {
+        console.log(`📨 Enviando a Python: "${pregunta}"`);
+
+        // 1. ENVIAR PREGUNTA A PYTHON
+        const pythonResponse = await axios.post(PYTHON_API_URL, {
+            pregunta: pregunta
+        });
+
+        // 2. OBTENER RESPUESTA DE PYTHON
+        // api.py devuelve: { "respuesta": "Texto de Gemini..." }
+        const respuestaBot = pythonResponse.data.respuesta;
+        console.log(`mb Recibido de Python: "${respuestaBot}"`);
+
+        // 3. (OPCIONAL) GUARDAR EN HISTORIAL DE NODE (SQLite)
+        // Si quieres mantener un registro en el lado de Node también
+        const userId = req.user ? req.user.id : 0; // 0 si es anónimo
+        db.run(
+            'INSERT INTO chatbot_history (usuario_id, pregunta, respuesta) VALUES (?, ?, ?)',
+            [userId, pregunta, respuestaBot],
+            (err) => {
+                if (err) console.error('Error guardando historial en Node:', err.message);
+            }
+        );
+
+        // 4. RESPONDER AL FRONTEND
+        res.json({ respuesta: respuestaBot });
+
+    } catch (error) {
+        console.error('❌ Error conectando con Python:', error.message);
+        
+        // Manejo de error si Python está apagado
+        if (error.code === 'ECONNREFUSED') {
+            return res.json({ 
+                respuesta: "Lo siento, mi cerebro (servidor Python) está desconectado en este momento." 
+            });
+        }
+
+        res.status(500).json({ error: 'Error interno del servidor al procesar la pregunta.' });
+    }
+});
+
+// Ruta para obtener historial (Se mantiene igual que antes)
+router.get('/historial', (req, res) => {
+    // ... tu código existente para historial ...
+    // Si usas auth: const userId = req.user.id;
+    const userId = req.user ? req.user.id : 0; 
+    
+    db.all(
+        `SELECT pregunta, respuesta, created_at 
+         FROM chatbot_history 
+         WHERE usuario_id = ? 
+         ORDER BY created_at DESC LIMIT 20`,
+        [userId],
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        }
+    );
+});
+
+module.exports = router;
