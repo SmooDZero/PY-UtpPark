@@ -1,0 +1,172 @@
+:root {
+  --primary-color: #5b35f2;
+  --secondary-color: #edf5fa;
+  --text-color: #333;
+  --gray-text: #555;
+  --border-radius: 6px;
+  --transition: 0.3s ease;
+}
+
+body {
+  font-family: 'Lato', sans-serif;
+  color: var(--text-color);
+  background-color: var(--secondary-color);
+  margin: 0;
+  padding: 0;
+}
+
+.login-container {
+  display: flex;
+  height: 100vh;
+}
+
+.login-left {
+  flex: 1;
+  background-color: #edf5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.welcome-text {
+  text-align: left;
+  max-width: 400px;
+}
+
+.welcome-text h2 {
+  color: #333;
+  font-size: 28px;
+  margin-bottom: 15px;
+}
+
+.welcome-text p {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.login-illustration {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-right {
+  flex: 1;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.portal-logo {
+  height: 60px;
+  margin-bottom: 20px;
+}
+
+.login-card h2 {
+  color: #333;
+}
+
+.login-card p {
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+.input-group i {
+  position: absolute;
+  right: 12px;
+  color: #777;
+  cursor: pointer;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #000;
+}
+
+.hint {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #d5e5f0;
+  color: #fff;
+  font-size: 16px;
+  cursor: not-allowed;
+  transition: background 0.3s;
+}
+
+button.active {
+  background-color: #5b35f2;
+  cursor: pointer;
+}
+
+.reset-link {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  color: #5b35f2;
+  text-decoration: none;
+  margin-bottom: 15px;
+}
+
+.reset-link:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .login-left {
+    display: none;
+  }
+  .login-right {
+    flex: 1;
+  }
+}
+

@@ -1,0 +1,132 @@
+  <!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UTP+Portal</title>
+
+    <!-- Fuente Lato -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome (iconos) -->
+    <script src="https://kit.fontawesome.com/a2e0e6ad04.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+  <body>
+
+    <!-- BARRA SUPERIOR -->
+    <header class="topbar">
+      <div class="left-group">
+        <button id="hamburger" class="hamburger" aria-label="Abrir menú">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+
+        <div class="brand">
+          <img src="img/UTP+Portal.png" alt="UTP+Portal" class="brand-img" />
+        </div>
+      </div>
+
+      <div class="right-group">
+    <div class="user-panel" id="userDropdown">
+      <div class="user-text">
+        <span class="hi">Hola,</span>
+        <span class="name">Manuel</span>
+        <div class="code">U22238381</div>
+      </div>
+      <div class="user-avatar">
+        <img src="img/default-user.png" alt="Usuario" class="avatar" id="avatarImg" />
+        <i class="fas fa-chevron-down chevron" id="userChevron"></i>
+      </div>
+
+      <!-- Menú desplegable -->
+      <div class="user-menu" id="userMenu">
+        <a href="#" class="user-menu-item"><i class="far fa-user-circle"></i> Ver perfil</a>
+        <a href="#" class="user-menu-item"><i class="fas fa-key"></i> Cambiar contraseña</a>
+        <a href="login.html" class="user-menu-item"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+      </div>
+    </div>
+  </div>
+
+      </div>
+    </header>
+
+    <!-- MENÚ LATERAL -->
+    <nav id="sidebar" class="sidebar">
+      <!-- Bloque usuario (solo móvil) -->
+      <div class="sidebar-user">
+        <img src="img/default-user.png" alt="Usuario">
+        <div class="name">Manuel</div>
+        <div class="code">U22238381</div>
+      </div>
+
+      <ul class="menu-list">
+        <li class="menu-item active" data-section="inicio">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-th-large"></i><span>Inicio</span></a>
+        </li>
+        <li class="menu-item" data-section="calendario">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-calendar-alt"></i><span>Calendario</span></a>
+        </li>
+        <li class="menu-item" data-section="cursos">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-book"></i><span>Cursos</span></a>
+        </li>
+        <li class="menu-item" data-section="pagos">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-credit-card"></i><span>Pagos</span></a>
+        </li>
+        <li class="menu-item" data-section="servicios">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-concierge-bell"></i><span>Servicios</span></a>
+        </li>
+        <li class="menu-item" data-section="tramites">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-file-alt"></i><span>Trámites</span></a>
+        </li>
+        <li class="menu-item" data-section="park">
+          <span class="active-bar"></span>
+          <a href="#" class="menu-link"><i class="fas fa-car"></i><span>Park UTP</span></a>
+        </li>
+      </ul>
+
+      <hr class="sidebar-divider" />
+
+      <!-- Bloque inferior (solo móvil) -->
+      <div class="sidebar-footer">
+        <a href="#"><i class="far fa-user-circle"></i> Ver perfil</a>
+        <a href="#"><i class="fas fa-key"></i> Cambiar contraseña</a>
+        <a href="login.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+      </div>
+    </nav>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay hidden"></div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main id="mainContent" class="main-content">
+      <section id="inicio" class="section active-section">
+        <div class="placeholder">
+          <h2>Inicio</h2>
+          <p>Bienvenido al Portal UTP.</p>
+        </div>
+      </section>
+
+      <section id="park" class="section">
+        <div class="placeholder">
+          <h2>Park UTP</h2>
+          <p>Aquí se mostrará el módulo de control de acceso vehicular.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- JS -->
+    <script src="js/index.js"></script>
+  </body>
+  </html>
