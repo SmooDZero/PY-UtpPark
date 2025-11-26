@@ -256,7 +256,8 @@ const db = require('../database/db'); // Mantenemos db para guardar el historial
 const router = express.Router();
 
 // URL de tu API de Python (asegúrate que el puerto coincida con api.py)
-const PYTHON_API_URL = 'http://localhost:5000/ask';
+const PYTHON_API_URL = 'http://127.0.0.1:5000/ask';
+
 
 // Ruta para enviar la pregunta (POST)
 // Si tienes autenticación activa en el frontend, agrega authenticateToken como segundo parámetro
