@@ -44,3 +44,37 @@ app.listen(PORT, () => {
   console.log(`📱 Frontend disponible en http://localhost:${PORT}`);
 });
 
+
+/*
+================================================================
+MANUAL DE EJECUCIÓN - SISTEMA DE ESTACIONAMIENTO INTELIGENTE
+================================================================
+
+IMPORTANTE: Se requieren dos terminales abiertas simultáneamente.
+
+           --- TERMINAL 1: SERVICIO DE IA (PYTHON) ---
+         1. Navegar al directorio raíz:
+             > cd Chatbot-Innovaci-n
+
+         2. Activar entorno virtual:
+             > .\venv\Scripts\activate
+
+         3. Iniciar el servicio API:
+             > python -m parking_system.api
+
+    [Estado Correcto]: Running on http://127.0.0.1:5000
+
+
+             --- TERMINAL 2: APLICACIÓN WEB (NODE.JS) ---
+          1. Navegar al directorio raíz:
+             > cd PY-UtpPark
+
+          2. Iniciar el servidor de desarrollo:
+             > npm start
+
+    [Estado Correcto]: Servidor corriendo en http://localhost:3000
+
+                   --- ACCESO FINAL ---
+            Abrir navegador en: http://localhost:3000
+
+*/
