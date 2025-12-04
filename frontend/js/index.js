@@ -1,4 +1,6 @@
 // === ELEMENTOS ===
+
+/*
 const hamburger = document.getElementById('hamburger');
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('overlay');
@@ -201,4 +203,253 @@ function removeToken() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
 }
+¨*/
+// === ELEMENTOS DEL DOM ===
+const hamburger = document.getElementById('hamburger');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const menuList = document.getElementById('menuList');
+const mainContent = document.getElementById('mainContent');
+const userDropdown = document.getElementById('userDropdown');
+const userMenu = document.getElementById('userMenu');
 
+// Elementos de texto de usuario
+const userNameElements = [document.getElementById('userName'), document.getElementById('sidebarName')];
+const userCodeElements = [document.getElementById('userCode'), document.getElementById('sidebarCode')];
+
+// Botones
+const logoutBtns = [document.getElementById('logoutBtn'), document.getElementById('logoutBtnMobile')];
+
+// === FUNCIÓN PRINCIPAL DE INICIO ===
+// En frontend/js/index.js
+
+async function init() {
+    // 1. Verificar sesión con el Backend
+    const user = await checkSession();
+
+    // 2. Lógica de Seguridad (EL CAMBIO IMPORTANTE)
+    if (!user) {
+        // Si no hay usuario válido, forzamos la redirección y detenemos todo
+        window.location.href = '/login.html';
+        return; 
+    }
+
+    // 3. Si llegamos aquí, es porque hay usuario. Cargamos la interfaz.
+    updateUI(user);
+    buildMenu(user);
+    document.body.classList.add('loaded'); // Mostrar la página
+}
+
+// Actualizar textos en la interfaz
+function updateUI(user) {
+  // Python nos devuelve: nombre, email, codigo, tipo
+  const nombreMostrar = user.nombre || 'Usuario';
+  const codigoMostrar = user.codigo || user.dni || '-';
+
+  userNameElements.forEach(el => { if(el) el.textContent = nombreMostrar; });
+  userCodeElements.forEach(el => { if(el) el.textContent = codigoMostrar; });
+}
+
+// === MENÚ DINÁMICO SEGÚN TIPO DE USUARIO ===
+// === CONFIGURACIÓN DE ROLES (IDs Numéricos de tu Base de Datos) ===
+const ROLES = {
+    ADMIN: 1,
+    ALUMNO: 2,
+    DOCENTE: 3,
+    GESTOR: 4
+};
+
+// === MENÚ DINÁMICO SEGÚN ROL ===
+function buildMenu(user) {
+    // Leemos el rol. Puede venir como 'rol' (número) o 'tipo' (texto antiguo)
+    // Convertimos a entero para asegurar la comparación.
+    const userRole = parseInt(user.rol); 
+
+    const menuItems = [];
+
+    // --- LÓGICA DE PERMISOS ---
+    
+    // CASO 1: ADMINISTRADOR (Menú Personalizado)
+    if (userRole === ROLES.ADMIN) {
+        menuItems.push(
+            { icon: 'fas fa-chart-line', text: 'Operación y Uso', section: 'dashboard' },
+            { icon: 'fas fa-exclamation-triangle', text: 'Alertas de "Mal Uso"', section: 'alertas' },
+            { icon: 'fas fa-users-cog', text: 'Gestión de Usuarios', section: 'usuarios' }
+        );
+    }
+    else if (userRole === ROLES.GESTOR) {
+        menuItems.push(
+            // Eliminamos Dashboard y Estadísticas para el Gestor
+            { icon: 'fas fa-parking', text: 'Gestión de Espacios', section: 'espacios' },
+            
+        );
+    }
+
+    // CASO 2: Alumnos y Docentes (Usuarios normales)
+    else if (userRole === ROLES.ALUMNO || userRole === ROLES.DOCENTE) {
+        menuItems.push(
+            // 1. "Mi Pase": Es la pantalla 'inicio' con el Carnet y el Semáforo
+            { icon: 'fas fa-id-card', text: 'Mi Pase', section: 'inicio' },
+            
+            // 2. "Mi Vehículo": Para ver su placa y estado
+            { icon: 'fas fa-car', text: 'Mi Vehículo', section: 'vehiculo' },
+            
+            // 3. "Asistente": Pantalla dedicada al chat
+            { icon: 'fas fa-robot', text: 'Asistente Virtual', section: 'chatbot' }
+        );
+    }
+    // CASO 3: Rol desconocido o error
+    else {
+        console.warn("Rol desconocido detectado:", userRole);
+        menuItems.push(
+            { icon: 'fas fa-exclamation-circle', text: 'Sin Acceso', section: 'inicio' }
+        );
+    }
+
+    // --- RENDERIZADO (IGUAL QUE ANTES) ---
+    if (menuList) {
+        menuList.innerHTML = menuItems.map((item, index) => `
+            <li class="menu-item ${index === 0 ? 'active' : ''}" data-section="${item.section}">
+                <span class="active-bar"></span>
+                <a href="#" class="menu-link">
+                    <i class="${item.icon}"></i>
+                    <span>${item.text}</span>
+                </a>
+            </li>
+        `).join('');
+
+        // Event Listeners (Esto se mantiene igual, no lo toques)
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.dataset.section;
+                
+                handleNavigation(section);
+                
+                document.querySelectorAll('.menu-item').forEach(mi => mi.classList.remove('active'));
+                item.classList.add('active');
+                closeSidebar();
+            });
+        });
+
+        // Cargar primera sección
+        if (menuItems.length > 0) {
+            handleNavigation(menuItems[0].section);
+        }
+    }
+}
+
+/// Reemplaza TODA la función handleNavigation con esto:
+
+function handleNavigation(sectionId) {
+    console.log("Navegando a sección:", sectionId);
+
+    // 1. Cerrar modales si existen (limpieza)
+    const chatbotModal = document.getElementById('chatbotModal');
+    if (chatbotModal) chatbotModal.classList.add('hidden');
+
+    // 2. Obtener usuario para saber qué script cargar
+    const user = getUser();
+    if (!user) return;
+    const userRole = parseInt(user.rol);
+
+    // === CASO A: ADMINISTRADOR (Cargar admin.js) ===
+    if (sectionId === 'dashboard' || sectionId === 'alertas' || sectionId === 'usuarios') {
+        if (typeof window.routeAdminSections === 'function') {
+            routeAdminSections(sectionId);
+        } else {
+            console.log("Cargando módulo de Admin...");
+            const script = document.createElement('script');
+            script.src = 'frontend/js/admin.js'; // Ruta corregida
+            script.onload = () => routeAdminSections(sectionId);
+            script.onerror = () => console.error("Error cargando admin.js");
+            document.body.appendChild(script);
+        }
+        return; 
+    }
+
+    // === CASO B: ESTUDIANTE / DOCENTE (Cargar student.js) ===
+    // AQUÍ FALTABA TU LÓGICA
+    if (userRole === 2 || userRole === 3) {
+        if (typeof window.loadStudentSection === 'function') {
+            // Si ya existe la función, la usamos
+            window.loadStudentSection(sectionId);
+        } else {
+            // Si no existe, cargamos el archivo
+            console.log("Cargando módulo de Estudiante...");
+            const script = document.createElement('script');
+            script.src = 'frontend/js/student.js'; // Ruta corregida
+            script.onload = () => window.loadStudentSection(sectionId);
+            script.onerror = () => console.error("Error cargando student.js. Verifica que el archivo exista en frontend/js/");
+            document.body.appendChild(script);
+        }
+        return;
+    }
+
+    // === CASO C: GESTOR O FALLBACK (Usa funciones globales) ===
+    if (typeof window.loadSection === 'function') {
+        window.loadSection(sectionId);
+    }
+}
+
+// === INTERACCIÓN UI (Sidebar, Dropdown) ===
+
+// Abrir/Cerrar Sidebar
+if (hamburger) {
+  hamburger.addEventListener('click', () => {
+    if (window.innerWidth < 992) {
+      const isOpen = sidebar.classList.toggle('open');
+      overlay.classList.toggle('hidden', !isOpen);
+      hamburger.classList.toggle('active', isOpen);
+      
+      const leftGroup = document.querySelector('.left-group');
+      if(leftGroup) leftGroup.classList.toggle('expanded', isOpen);
+    }
+  });
+}
+
+function closeSidebar() {
+  if (window.innerWidth < 992) {
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.add('hidden');
+    if (hamburger) hamburger.classList.remove('active');
+    const leftGroup = document.querySelector('.left-group');
+    if(leftGroup) leftGroup.classList.remove('expanded');
+  }
+}
+
+if (overlay) overlay.addEventListener('click', closeSidebar);
+
+// Menú Usuario Dropdown
+if (userDropdown) {
+  userDropdown.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    userMenu.classList.toggle('show'); // Usamos clase CSS mejor que style inline
+    userMenu.style.display = userMenu.style.display === 'flex' ? 'none' : 'flex';
+  });
+}
+
+document.addEventListener('click', () => {
+  if (userMenu) userMenu.style.display = 'none';
+});
+
+// === LOGOUT ===
+logoutBtns.forEach(btn => {
+  if (btn) {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Llama a logout de auth.js que limpia la cookie en Python
+      logout(); 
+    });
+  }
+});
+
+// === RESPONSIVE ===
+window.addEventListener('resize', () => {
+  if (window.innerWidth >= 992) {
+    closeSidebar();
+  }
+});
+
+// Arrancar la aplicación
+init();

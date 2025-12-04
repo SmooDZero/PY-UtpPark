@@ -1,536 +1,226 @@
-// Dashboard para gestores
-// Nota: getUser() se llama dentro de las funciones cuando se necesita
+// frontend/js/gestor.js
 
-// Función global para cargar secciones (gestor)
-// Sobrescribe la función si ya existe para manejar gestores
+// 1. Guardamos la función original (la que usan los alumnos en dashboard.js)
+// para no romperles su vista.
 const originalLoadSection = window.loadSection;
+
+// 2. Sobrescribimos la función maestra de carga
 window.loadSection = async function(sectionId) {
-  const user = getUser();
-  if (!user) return;
-  
-  if (user.tipo === 'gestor') {
-    // Si es gestor, usar la función de gestor
-    await loadSectionContent(sectionId);
-  } else if (originalLoadSection) {
-    // Si no es gestor, usar la función original (de dashboard.js)
-    await originalLoadSection(sectionId);
-  }
+    const user = getUser();
+    const ROL_GESTOR = 4; // ID 4 en tu base de datos
+
+    // === CASO A: SI EL USUARIO ES GESTOR ===
+    if (user && parseInt(user.rol) === ROL_GESTOR) {
+        
+        // El menú del gestor en index.js envía a 'espacios', 'dashboard' o 'inicio'
+        if (sectionId === 'espacios' || sectionId === 'dashboard' || sectionId === 'inicio') {
+            await loadGestorView();
+        } 
+        else if (sectionId === 'usuarios') {
+            // Reutilizamos la tabla de usuarios del Admin (ya que es igual)
+            if (typeof window.routeAdminSections === 'function') {
+                window.routeAdminSections('usuarios');
+            } else {
+                // Si admin.js no cargó, forzamos carga (fallback)
+                const script = document.createElement('script');
+                script.src = 'frontend/js/admin.js';
+                script.onload = () => window.routeAdminSections('usuarios');
+                document.body.appendChild(script);
+            }
+        }
+        else if (sectionId === 'chatbot') {
+            // Abrir chatbot
+            if (window.openChatbot) window.openChatbot();
+        }
+    } 
+    // === CASO B: SI ES ALUMNO O PROFESOR ===
+    else {
+        // Le devolvemos el control a dashboard.js
+        if (typeof originalLoadSection === 'function') {
+            originalLoadSection(sectionId);
+        }
+    }
 };
 
-// Cargar sección según hash de URL
-window.addEventListener('hashchange', () => {
-  const hash = window.location.hash.substring(1);
-  if (hash && typeof window.loadSection === 'function') {
-    window.loadSection(hash);
-  }
-});
+// --- VISTA PRINCIPAL DEL GESTOR (LA CASETA) ---
+async function loadGestorView() {
+    const mainContent = document.getElementById('mainContent');
+    
+    // ESTRUCTURA VISUAL (Igual que antes, pero asegurando que cargue)
+    mainContent.innerHTML = `
+        <div class="gestor-container">
+            <div class="control-panel">
+                <div class="kpi-box">
+                    <div class="kpi-item available">
+                        <span class="kpi-number" id="lbl-libres">--</span>
+                        <span class="kpi-label">LIBRES</span>
+                    </div>
+                    <div class="kpi-item occupied">
+                        <span class="kpi-number" id="lbl-ocupados">--</span>
+                        <span class="kpi-label">OCUPADOS</span>
+                    </div>
+                </div>
 
-// Cargar sección inicial desde hash
-if (window.location.hash) {
-  const hash = window.location.hash.substring(1);
-  if (typeof window.loadSection === 'function') {
-    window.loadSection(hash);
-  }
+                <div class="scanner-box">
+                    <h3><i class="fas fa-barcode"></i> Validación de Ingreso</h3>
+                    <p>Ingrese Placa o DNI:</p>
+                    <div class="input-group-lg">
+                        <input type="text" id="inputIngreso" placeholder="AAA-123" autocomplete="off">
+                        <button id="btnValidar" class="btn-scan"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+
+                <div class="actions-log">
+                    <h4><i class="fas fa-history"></i> Actividad Reciente</h4>
+                    <ul id="listaMovimientos" class="log-list">
+                        <li class="empty-log">Esperando vehículos...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="map-panel">
+                <div class="map-header">
+                    <h2><i class="fas fa-map-marked-alt"></i> Mapa del Estacionamiento</h2>
+                    <button class="btn-refresh" onclick="refreshMap()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+                </div>
+                
+                <div class="map-legend">
+                    <span class="legend-item"><span class="dot free"></span> Libre</span>
+                    <span class="legend-item"><span class="dot busy"></span> Ocupado</span>
+                </div>
+
+                <div id="parkingGrid" class="parking-grid">
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Cargando mapa...</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Cargar datos reales
+    await refreshMap();
+    setupGestorEvents();
 }
 
-async function loadSectionContent(sectionId) {
-  const mainContent = document.getElementById('mainContent');
-  
-  switch(sectionId) {
-    case 'dashboard':
-      mainContent.innerHTML = await loadDashboardGestor();
-      await loadDashboardData();
-      break;
-    case 'espacios':
-      mainContent.innerHTML = await loadEspaciosGestor();
-      await loadEspaciosData();
-      break;
-    case 'usuarios':
-      mainContent.innerHTML = await loadUsuariosGestor();
-      await loadUsuariosData();
-      break;
-    case 'estadisticas':
-      mainContent.innerHTML = await loadEstadisticas();
-      await loadEstadisticasData();
-      break;
-    case 'chatbot':
-      // Mostrar contenido del chatbot en lugar de abrir modal automáticamente
-      mainContent.innerHTML = `
-        <section class="section active-section">
-          <div class="section-header">
-            <h2><i class="fas fa-robot"></i> Asistente Virtual</h2>
-            <button class="btn-primary" id="openChatbotBtn" data-action="open-chatbot">
-              <i class="fas fa-comments"></i> Abrir Chatbot
-            </button>
-          </div>
-          <div class="info-box">
-            <h3>¿Necesitas ayuda?</h3>
-            <p>Haz clic en el botón "Abrir Chatbot" para iniciar una conversación con nuestro asistente virtual.</p>
-            <p>El chatbot puede ayudarte con:</p>
-            <ul>
-              <li>Reglas del estacionamiento</li>
-              <li>Horarios y disponibilidad</li>
-              <li>Normas de tránsito</li>
-              <li>Requisitos y documentación</li>
-            </ul>
-          </div>
-        </section>
-      `;
-      // Agregar event listener después de que el HTML se inserte
-      setTimeout(() => {
-        const openBtn = document.getElementById('openChatbotBtn');
-        if (openBtn) {
-          openBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const modal = document.getElementById('chatbotModal');
-            if (modal) {
-              modal.classList.remove('hidden');
-              const input = document.getElementById('chatbotInput');
-              if (input) {
-                setTimeout(() => input.focus(), 100);
-              }
-              if (typeof loadChatbotHistory === 'function') {
-                loadChatbotHistory();
-              }
-            } else {
-              console.error('Modal del chatbot no encontrado');
-            }
-          };
-        } else {
-          console.error('Botón de abrir chatbot no encontrado');
+// --- LÓGICA DE DATOS ---
+async function refreshMap() {
+    try {
+        const response = await authenticatedFetch('/espacios/disponibilidad');
+        if (!response || !response.ok) return;
+
+        const data = await response.json();
+        
+        // 1. Renderizar Mapa y KPIs
+        renderMap(data.espacios);
+        updateKPIs(data.estadisticas);
+
+        // 2. ACTUALIZACIÓN VISUAL: Mostrar en qué edificio estamos
+        const tituloMapa = document.querySelector('.map-header h2');
+        if (tituloMapa && data.ubicacion_actual) {
+            tituloMapa.innerHTML = `<i class="fas fa-map-marked-alt"></i> Mapa: ${data.ubicacion_actual}`;
         }
-      }, 50);
-      break;
-    default:
-      mainContent.innerHTML = await loadDashboardGestor();
-      await loadDashboardData();
-  }
-}
 
-async function loadDashboardGestor() {
-  return `
-    <section class="section active-section">
-      <div class="dashboard-header">
-        <h1>Panel de Gestión</h1>
-        <p>Gestiona espacios y usuarios del estacionamiento</p>
-      </div>
-      <div class="dashboard-cards" id="dashboardCards"></div>
-      <div class="dashboard-content">
-        <div class="recent-activity">
-          <h3>Actividad Reciente</h3>
-          <div id="recentActivity"></div>
-        </div>
-      </div>
-    </section>
-  `;
-}
-
-async function loadDashboardData() {
-  try {
-    const response = await authenticatedFetch('/parking/espacios');
-    if (!response) return;
-    
-    const espacios = await response.json();
-    
-    const total = espacios.length;
-    const disponibles = espacios.filter(e => e.estado === 'disponible').length;
-    const ocupados = espacios.filter(e => e.estado === 'ocupado').length;
-    
-    const cards = document.getElementById('dashboardCards');
-    if (cards) {
-      cards.innerHTML = `
-        <div class="card">
-          <div class="card-icon" style="background: #5b35f2;">
-            <i class="fas fa-parking"></i>
-          </div>
-          <div class="card-content">
-            <h3>Total Espacios</h3>
-            <p class="card-value">${total}</p>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-icon" style="background: #4caf50;">
-            <i class="fas fa-check-circle"></i>
-          </div>
-          <div class="card-content">
-            <h3>Disponibles</h3>
-            <p class="card-value">${disponibles}</p>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-icon" style="background: #fc4961;">
-            <i class="fas fa-times-circle"></i>
-          </div>
-          <div class="card-content">
-            <h3>Ocupados</h3>
-            <p class="card-value">${ocupados}</p>
-          </div>
-        </div>
-      `;
+    } catch (error) {
+        console.error("Error mapa:", error);
     }
-  } catch (error) {
-    console.error('Error al cargar dashboard:', error);
-  }
 }
 
-async function loadEspaciosGestor() {
-  return `
-    <section class="section active-section">
-      <div class="section-header">
-        <h2><i class="fas fa-parking"></i> Gestión de Espacios</h2>
-        <button class="btn-primary" onclick="showCrearEspacio()">
-          <i class="fas fa-plus"></i> Crear Espacio
-        </button>
-      </div>
-      <div class="espacios-gestor-grid" id="espaciosGrid"></div>
-    </section>
-  `;
-}
-
-async function loadEspaciosData() {
-  try {
-    const response = await authenticatedFetch('/parking/espacios');
-    if (!response) return;
-    
-    const espacios = await response.json();
-    
-    const grid = document.getElementById('espaciosGrid');
-    if (grid) {
-      grid.innerHTML = espacios.map(espacio => `
-        <div class="espacio-gestor-card ${espacio.estado}">
-          <div class="espacio-header">
-            <h3>${espacio.numero}</h3>
-            <span class="badge ${espacio.estado}">${espacio.estado}</span>
-          </div>
-          <div class="espacio-info">
-            <p><strong>Tipo:</strong> ${espacio.tipo}</p>
-            <p><strong>Ubicación:</strong> ${espacio.ubicacion || '-'}</p>
-            ${espacio.usuario_nombre ? `
-              <p><strong>Asignado a:</strong> ${espacio.usuario_nombre} (${espacio.usuario_codigo})</p>
-              <p><strong>Vehículo:</strong> ${espacio.placa}</p>
-            ` : '<p>Sin asignar</p>'}
-          </div>
-          <div class="espacio-actions">
-            ${espacio.estado === 'ocupado' ? `
-              <button class="btn-small btn-success" onclick="liberarEspacio(${espacio.id})">
-                <i class="fas fa-unlock"></i> Liberar
-              </button>
-            ` : `
-              <button class="btn-small btn-primary" onclick="asignarEspacio(${espacio.id})">
-                <i class="fas fa-user-plus"></i> Asignar
-              </button>
-            `}
-          </div>
-        </div>
-      `).join('');
-    }
-  } catch (error) {
-    console.error('Error al cargar espacios:', error);
-  }
-}
-
-async function loadUsuariosGestor() {
-  return `
-    <section class="section active-section">
-      <div class="section-header">
-        <h2><i class="fas fa-users"></i> Usuarios con Vehículos</h2>
-      </div>
-      <div class="usuarios-table-container">
-        <table class="usuarios-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Placa</th>
-              <th>Vehículo</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="usuariosTableBody"></tbody>
-        </table>
-      </div>
-    </section>
-  `;
-}
-
-async function loadUsuariosData() {
-  try {
-    const response = await authenticatedFetch('/parking/usuarios');
-    if (!response) return;
-    
-    const usuarios = await response.json();
-    
-    const tbody = document.getElementById('usuariosTableBody');
-    if (tbody) {
-      tbody.innerHTML = usuarios.map(usuario => `
-        <tr>
-          <td>${usuario.codigo}</td>
-          <td>${usuario.nombre}</td>
-          <td><span class="badge">${usuario.tipo}</span></td>
-          <td>${usuario.placa}</td>
-          <td>${usuario.marca} ${usuario.modelo}</td>
-          <td>
-            <button class="btn-small btn-primary" onclick="asignarEspacioUsuario(${usuario.id}, ${usuario.vehiculo_id})">
-              Asignar Espacio
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-  } catch (error) {
-    console.error('Error al cargar usuarios:', error);
-  }
-}
-
-async function loadEstadisticas() {
-  return `
-    <section class="section active-section">
-      <div class="section-header">
-        <h2><i class="fas fa-chart-bar"></i> Estadísticas</h2>
-      </div>
-      <div id="estadisticasContent"></div>
-    </section>
-  `;
-}
-
-async function loadEstadisticasData() {
-  try {
-    const response = await authenticatedFetch('/parking/espacios');
-    if (!response) return;
-    
-    const espacios = await response.json();
-    
-    const stats = {
-      total: espacios.length,
-      disponibles: espacios.filter(e => e.estado === 'disponible').length,
-      ocupados: espacios.filter(e => e.estado === 'ocupado').length,
-      porTipo: {}
-    };
+function renderMap(espacios) {
+    const grid = document.getElementById('parkingGrid');
+    if(!grid) return;
+    grid.innerHTML = ''; 
 
     espacios.forEach(espacio => {
-      if (!stats.porTipo[espacio.tipo]) {
-        stats.porTipo[espacio.tipo] = { total: 0, disponibles: 0, ocupados: 0 };
-      }
-      stats.porTipo[espacio.tipo].total++;
-      if (espacio.estado === 'disponible') stats.porTipo[espacio.tipo].disponibles++;
-      if (espacio.estado === 'ocupado') stats.porTipo[espacio.tipo].ocupados++;
-    });
+        const card = document.createElement('div');
+        // Validamos estado para clase CSS
+        const estadoClase = espacio.estado === 'disponible' ? 'disponible' : 'ocupado';
+        
+        card.className = `slot-card ${estadoClase}`;
+        
+        // Iconos según tipo
+        let icon = 'car';
+        if(espacio.tipo === 'moto') icon = 'motorcycle';
+        if(espacio.tipo.includes('discapacitado')) icon = 'wheelchair';
 
-    const content = document.getElementById('estadisticasContent');
-    if (content) {
-      content.innerHTML = `
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total de Espacios</h3>
-            <p class="stat-value">${stats.total}</p>
-          </div>
-          <div class="stat-card available">
-            <h3>Disponibles</h3>
-            <p class="stat-value">${stats.disponibles}</p>
-          </div>
-          <div class="stat-card occupied">
-            <h3>Ocupados</h3>
-            <p class="stat-value">${stats.ocupados}</p>
-          </div>
-        </div>
-        <div class="stats-by-type">
-          <h3>Por Tipo de Vehículo</h3>
-          ${Object.entries(stats.porTipo).map(([tipo, data]) => `
-            <div class="type-stat">
-              <h4>${tipo.toUpperCase()}</h4>
-              <p>Total: ${data.total} | Disponibles: ${data.disponibles} | Ocupados: ${data.ocupados}</p>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.error('Error al cargar estadísticas:', error);
-  }
+        card.innerHTML = `
+            <div class="slot-number">${espacio.numero}</div>
+            <div class="slot-icon"><i class="fas fa-${icon}"></i></div>
+            <div class="slot-status">${espacio.ubicacion}</div>
+        `;
+
+        // Acción al hacer click
+        card.onclick = () => gestionarEspacio(espacio);
+        grid.appendChild(card);
+    });
 }
 
-// Funciones globales para asignar/liberar espacios
-window.asignarEspacio = async function(espacioId) {
-  // Cargar usuarios primero
-  const response = await authenticatedFetch('/parking/usuarios');
-  if (!response) return;
-  
-  const usuarios = await response.json();
-  
-  if (usuarios.length === 0) {
-    alert('No hay usuarios con vehículos registrados');
-    return;
-  }
+function updateKPIs(stats) {
+    if(!stats) return;
+    const lblLibres = document.getElementById('lbl-libres');
+    const lblOcupados = document.getElementById('lbl-ocupados');
+    if(lblLibres) lblLibres.textContent = stats.disponibles;
+    if(lblOcupados) lblOcupados.textContent = stats.ocupados;
+}
 
-  const usuarioOptions = usuarios.map(u => 
-    `<option value="${u.id}" data-vehiculo="${u.vehiculo_id}">${u.nombre} (${u.codigo}) - ${u.placa}</option>`
-  ).join('');
+function setupGestorEvents() {
+    const btn = document.getElementById('btnValidar');
+    const input = document.getElementById('inputIngreso');
 
-  const usuarioId = prompt(`Seleccione usuario:\n${usuarios.map((u, i) => `${i+1}. ${u.nombre} (${u.codigo})`).join('\n')}\n\nIngrese el número:`, '1');
-  
-  if (!usuarioId) return;
-  
-  const selectedUser = usuarios[parseInt(usuarioId) - 1];
-  if (!selectedUser) {
-    alert('Usuario inválido');
-    return;
-  }
-
-  try {
-    const assignResponse = await authenticatedFetch('/parking/asignar', {
-      method: 'POST',
-      body: JSON.stringify({
-        usuario_id: selectedUser.id,
-        vehiculo_id: selectedUser.vehiculo_id,
-        espacio_id: espacioId
-      })
-    });
-
-    if (!assignResponse) return;
-
-    if (assignResponse.ok) {
-      alert('Espacio asignado correctamente');
-      loadEspaciosData();
-    } else {
-      const data = await assignResponse.json();
-      alert(data.error || 'Error al asignar espacio');
+    if(btn && input) {
+        btn.onclick = () => {
+            const val = input.value.trim();
+            if(val) alert(`Funcionalidad de búsqueda para: ${val} (Próximamente)`);
+        };
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') btn.click();
+        });
     }
-  } catch (error) {
-    alert('Error al asignar espacio');
-  }
-};
+}
 
-window.liberarEspacio = async function(espacioId) {
-  if (!confirm('¿Está seguro de liberar este espacio?')) return;
+// Reemplaza la función gestionarEspacio en frontend/js/gestor.js
 
-  try {
-    const response = await authenticatedFetch(`/parking/liberar/${espacioId}`, {
-      method: 'POST'
-    });
+async function gestionarEspacio(espacio) {
+    let nuevoEstado = '';
+    let confirmacion = false;
 
-    if (!response) return;
-
-    if (response.ok) {
-      alert('Espacio liberado correctamente');
-      loadEspaciosData();
+    // Lógica de Toggle: Si está libre -> Ocupar. Si está ocupado -> Liberar.
+    if (espacio.estado === 'disponible') {
+        // Opción A: Ocupar manual (simulando que llegó un auto sin reserva)
+        nuevoEstado = 'ocupado';
+        confirmacion = confirm(`El espacio ${espacio.numero} está LIBRE.\n¿Desea marcarlo como OCUPADO (llegó un auto)?`);
     } else {
-      const data = await response.json();
-      alert(data.error || 'Error al liberar espacio');
+        // Opción B: Liberar (el auto se fue)
+        nuevoEstado = 'disponible';
+        confirmacion = confirm(`El espacio ${espacio.numero} está OCUPADO.\n¿El auto se ha retirado? (Liberar espacio)`);
     }
-  } catch (error) {
-    alert('Error al liberar espacio');
-  }
-};
 
-window.asignarEspacioUsuario = async function(usuarioId, vehiculoId) {
-  const response = await authenticatedFetch('/parking/espacios');
-  if (!response) return;
-  
-  const espacios = await response.json();
-  const disponibles = espacios.filter(e => e.estado === 'disponible');
-  
-  if (disponibles.length === 0) {
-    alert('No hay espacios disponibles');
-    return;
-  }
+    if (confirmacion) {
+        try {
+            const res = await authenticatedFetch('/gestor/cambiar-estado', {
+                method: 'POST',
+                body: JSON.stringify({
+                    id_espacio: espacio.id, // Asegúrate que el backend envíe 'id' en /espacios/disponibilidad
+                    nuevo_estado: nuevoEstado
+                })
+            });
 
-  const espacioOptions = disponibles.map((e, i) => 
-    `${i+1}. ${e.numero} (${e.tipo}) - ${e.ubicacion || 'Sin ubicación'}`
-  ).join('\n');
-
-  const espacioIndex = prompt(`Espacios disponibles:\n${espacioOptions}\n\nIngrese el número:`, '1');
-  
-  if (!espacioIndex) return;
-  
-  const selectedEspacio = disponibles[parseInt(espacioIndex) - 1];
-  if (!selectedEspacio) {
-    alert('Espacio inválido');
-    return;
-  }
-
-  try {
-    const assignResponse = await authenticatedFetch('/parking/asignar', {
-      method: 'POST',
-      body: JSON.stringify({
-        usuario_id: usuarioId,
-        vehiculo_id: vehiculoId,
-        espacio_id: selectedEspacio.id
-      })
-    });
-
-    if (!assignResponse) return;
-
-    if (assignResponse.ok) {
-      alert('Espacio asignado correctamente');
-      loadUsuariosData();
-      loadEspaciosData();
-    } else {
-      const data = await assignResponse.json();
-      alert(data.error || 'Error al asignar espacio');
+            if (res.ok) {
+                // Éxito: Recargar el mapa para ver el cambio de color
+                await refreshMap();
+                
+                // Feedback visual simple
+                alert(`¡Listo! Espacio ${espacio.numero} ahora está ${nuevoEstado.toUpperCase()}.`);
+            } else {
+                alert("Error al actualizar el espacio.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error de conexión.");
+        }
     }
-  } catch (error) {
-    alert('Error al asignar espacio');
-  }
-};
+}
 
-window.showCrearEspacio = function() {
-  const numero = prompt('Número del espacio (ej: A-006):');
-  if (!numero) return;
-
-  const tipo = prompt('Tipo (auto/moto/camioneta/discapacitado):');
-  if (!tipo) return;
-
-  const ubicacion = prompt('Ubicación (opcional):') || null;
-
-  if (!['auto', 'moto', 'camioneta', 'discapacitado'].includes(tipo)) {
-    alert('Tipo inválido');
-    return;
-  }
-
-  authenticatedFetch('/parking/espacios', {
-    method: 'POST',
-    body: JSON.stringify({ numero, tipo, ubicacion })
-  }).then(response => {
-    if (!response) return;
-    if (response.ok) {
-      alert('Espacio creado correctamente');
-      loadEspaciosData();
-    } else {
-      response.json().then(data => alert(data.error || 'Error al crear espacio'));
-    }
-  });
-};
-
-// La función openChatbot está definida globalmente en chatbot.js
-
-// Importar funciones necesarias
+// Helper para obtener usuario (si no está global)
 function getUser() {
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) : null;
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
 }
-
-async function authenticatedFetch(url, options = {}) {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    ...options.headers
-  };
-
-  const response = await fetch(`/api${url}`, {
-    ...options,
-    headers
-  });
-
-  if (response.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login.html';
-    return null;
-  }
-
-  return response;
-}
-

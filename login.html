@@ -3,22 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Portal UTP</title>
+  <title>Login - Park UTP</title>
 
   <!-- Estilos -->
-  <link rel="stylesheet" href="css/login.css" />
+  <link rel="stylesheet" href="/frontend/css/login.css" />
 
   <!-- Fuente Lato -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
 
-  <!-- Font Awesome 6 (solo esta línea) -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-  />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 
 <body class="login-page">
@@ -26,72 +20,49 @@
     <!-- LADO IZQUIERDO -->
     <div class="login-left">
       <div class="welcome-text">
-        <h2>¡Te damos la bienvenida!</h2>
-        <p>Gestiona trámites, realiza tus pagos y explora tus cursos de forma sencilla.</p>
-        <img src="img/login_v2.svg" alt="Login UTP" class="login-illustration" />
+        <h2>¡Bienvenido a Park UTP!</h2>
+        <p>Gestiona tu estacionamiento, consulta disponibilidad y obtén información sobre normas de tránsito.</p>
+        <img src="frontend/img/login_v2.svg" alt="Login UTP" class="login-illustration" />
       </div>
     </div>
 
     <!-- LADO DERECHO -->
     <div class="login-right">
       <div class="login-card">
-        <img src="img/utp+portal.png" alt="UTP Portal Logo" class="portal-logo" />
+        <img src="frontend/img/UTP+Portal.png" alt="UTP Portal Logo" class="portal-logo" />
         <h2>¡Hola!</h2>
         <p>Ingresa tus datos para iniciar sesión.</p>
 
-<form id="loginForm" onsubmit="return false;">
+        <form id="loginForm" onsubmit="return false;">
+          <!-- Usuario -->
+          <div class="form-group">
+            <label for="usuario"><strong>Usuario: código UTP</strong></label>
+            <p class="hint">Ejemplo: U22238381, C123456, G001</p>
+            <div class="input-group">
+              <input type="text" id="usuario" placeholder="Ingresa tu código UTP" required>
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
 
-  <!-- Usuario -->
-  <div class="form-group">
-    <label for="usuario"><strong>Usuario: código de alumno UTP</strong></label>
-    <p class="hint">Ejemplo de usuario: U1533148 (no digitar el @utp.edu.pe)</p>
-    <div class="input-group">
-      <input type="text" id="usuario" placeholder="Ingresa tu código UTP" required>
-      <i class="fas fa-user"></i>
-    </div>
-  </div>
+          <!-- Contraseña -->
+          <div class="form-group">
+            <label for="password"><strong>Contraseña</strong></label>
+            <div class="input-group">
+              <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+              <i class="fas fa-eye" id="togglePassword"></i>
+            </div>
+          </div>
 
-  <!-- Contraseña -->
-  <div class="form-group">
-    <label for="password"><strong>Contraseña</strong></label>
-    <div class="input-group">
-      <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
-      <i class="fas fa-eye" id="togglePassword"></i>
-    </div>
-  </div>
+          <div id="errorMessage" class="error-message" style="display: none;"></div>
 
-  <a href="#" class="reset-link">Restablecer contraseña</a>
-  <button type="submit" id="loginBtn" disabled>Iniciar Sesión</button>
-</form>
+          <a href="#" class="reset-link">Restablecer contraseña</a>
+          <button type="submit" id="loginBtn" disabled>Iniciar Sesión</button>
+        </form>
       </div>
     </div>
   </div>
 
-<script>
-  const usuario = document.getElementById("usuario");
-  const password = document.getElementById("password");
-  const loginBtn = document.getElementById("loginBtn");
-  const togglePassword = document.getElementById("togglePassword");
-
-  // Habilitar botón solo cuando hay texto
-  document.addEventListener("input", () => {
-    loginBtn.disabled = !(usuario.value.trim() && password.value.trim());
-    loginBtn.classList.toggle("active", !loginBtn.disabled);
-  });
-
-  // Mostrar / ocultar contraseña
-  togglePassword.addEventListener("click", () => {
-    const type = password.getAttribute("type") === "password" ? "text" : "password";
-    password.setAttribute("type", type);
-    togglePassword.classList.toggle("fa-eye-slash");
-  });
-
-  // Simular login (por ahora)
-  loginBtn.addEventListener("click", () => {
-    window.location.href = "index.html"; // Redirige al portal
-  });
-</script>
-
-  
+  <script src="frontend/js/login.js"></script>
 </body>
 </html>
+

@@ -12,6 +12,7 @@
   --sidebar-w: 260px;
 }
 
+
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
 
@@ -474,7 +475,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
 }
 
 .stat-card.occupied .stat-value {
-  color: #fc4961;
+  color: #fc807e;
 }
 
 .espacios-grid {
@@ -516,7 +517,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
 }
 
 .espacio-item.ocupado {
-  border-color: #fc4961;
+  border-color: #fc807e;
   background: #fff5f5;
 }
 
@@ -555,7 +556,7 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
 }
 
 .espacio-gestor-card.ocupado {
-  border-left-color: #fc4961;
+  border-left-color: #fc807e;
 }
 
 .espacio-header {
@@ -893,6 +894,518 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
   margin-bottom: 16px;
   font-size: 14px;
 }
+
+/* --- ESTILOS DASHBOARD ESTRATÉGICO --- */
+
+/* Icon Boxes en KPIs */
+.icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 15px;
+}
+.purple { background: #e0d4fc; color: #5b35f2; }
+.blue { background: #d4ebf7; color: #3498db; }
+.yellow { background: #fcf3cf; color: #f1c40f; }
+.red { background: #fadbd8; color: #e74c3c; }
+
+/* Sección de Gráficos */
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Buscador */
+.table-header-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.search-input {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    width: 300px;
+    outline: none;
+}
+
+/* --- MEJORA VISUAL DE TARJETAS (KPIs) --- */
+
+.stat-card {
+    background: white;
+    padding: 25px 30px; /* Aumentamos el relleno interno (Arriba/Abajo , Izq/Der) */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra más suave y elegante */
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Separa el Icono del Texto */
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px); /* Efecto de elevación al pasar el mouse */
+}
+
+/* Contenedor del texto (Título + Valor) */
+.stat-card .info {
+    display: flex;
+    flex-direction: column; /* Asegura que estén uno sobre otro */
+    justify-content: center;
+    gap: 8px; /* <--- ESTO ES CLAVE: Separa el Título del Número */
+}
+
+/* El Título (Ej: Autos en Campus) */
+.stat-card h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #8898aa; /* Gris suave profesional */
+    font-weight: 600;
+    text-transform: uppercase; /* Opcional: Se ve más técnico */
+    letter-spacing: 0.5px;
+}
+
+/* El Valor (Ej: 15 / 50) */
+.stat-card p {
+    margin: 0;
+    font-size: 1.8rem; /* Número más grande */
+    font-weight: 700;
+    color: #32325d; /* Azul oscuro corporativo */
+    line-height: 1.2; /* Altura de línea para que no toque los bordes */
+}
+/* --- ESTILOS GESTIÓN DE USUARIOS (TABS) --- */
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.tabs-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: #777;
+    cursor: pointer;
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover { color: #5b35f2; background: #f8f9fa; border-radius: 5px 5px 0 0; }
+
+.tab-btn.active {
+    color: #5b35f2;
+    border-bottom-color: #5b35f2;
+}
+
+/* Badges y Avatares */
+.user-avatar-small {
+    width: 35px;
+    height: 35px;
+    background-color: #e0d4fc;
+    color: #5b35f2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.placa-badge {
+    background: #ffeb3b; /* Color Placa Peruana */
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 2px solid #000;
+    font-family: monospace;
+    font-weight: bold;
+    letter-spacing: 1px;
+    display: inline-block;
+}
+
+.staff-badge {
+    border: 1px solid currentColor; /* Borde para resaltar autoridad */
+}
+
+.badge-mini {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 5px;
+    text-transform: uppercase;
+}
+.badge-mini.moto { background: #d1f2eb; color: #117864; }
+.badge-mini.auto { background: #d6eaf8; color: #2471a3; }
+
+.empty-msg { text-align: center; color: #999; padding: 30px; }
+
+/* --- ESTILOS TABLA DE ADMINISTRACIÓN --- */
+.table-container {
+    overflow-x: auto; /* Permite scroll horizontal en móviles */
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Asegura que no se aplaste demasiado */
+}
+
+.admin-table th, 
+.admin-table td {
+    padding: 15px 20px; /* Espacio interno para que no se peguen */
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.admin-table th {
+    background-color: #f8f9fa;
+    font-weight: 700;
+    color: #444;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.admin-table tr:hover {
+    background-color: #fcfcfc; /* Efecto al pasar el mouse */
+}
+
+/* Ajustes de columnas específicas */
+.admin-table th:first-child { border-radius: 8px 0 0 0; }
+.admin-table th:last-child { border-radius: 0 8px 0 0; }
+
+
+
+/* === ESTILOS DEL GESTOR (OPERACIONES) === */
+
+.gestor-container {
+    display: grid;
+    grid-template-columns: 350px 1fr; /* Panel izquierdo fijo, mapa flexible */
+    gap: 20px;
+    height: calc(100vh - 80px); /* Ocupar toda la pantalla menos el header */
+    padding: 10px;
+}
+
+/* Panel Izquierdo */
+.control-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* KPIs (Contadores Grandes) */
+.kpi-box {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+.kpi-item {
+    flex: 1;
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    color: white;
+}
+.kpi-item.available { background: #2ecc71; } /* Verde UTP */
+.kpi-item.occupied { background: #e74c3c; } /* Rojo */
+
+.kpi-number { display: block; font-size: 2.5rem; font-weight: bold; }
+.kpi-label { font-size: 0.8rem; letter-spacing: 1px; }
+
+  /* Input Gigante */
+  
+
+.scanner-box {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    width: 100%; /* Asegura que respete al padre */
+    box-sizing: border-box; /* El padding no aumenta el ancho total */
+}
+
+.input-group-lg {
+    display: flex;
+    width: 100%; /* Ocupar todo el ancho disponible */
+    margin-top: 10px;
+}
+
+.input-group-lg input {
+    flex: 1; /* Ocupar el espacio restante */
+    min-width: 0; /* TRUCO CLAVE: Evita que flexbox desborde si el contenido es largo */
+    font-size: 1.5rem;
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-right: none; /* Unir visualmente con el botón */
+    border-radius: 8px 0 0 8px;
+    text-transform: uppercase;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.btn-scan {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0 25px; /* Un poco más ancho para que se vea bien */
+    font-size: 1.5rem;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    flex-shrink: 0; /* Evita que el botón se aplaste */
+}
+
+/* Panel Derecho (Mapa) */
+.map-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+.map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.btn-refresh {
+    padding: 8px 15px;
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Grilla del Parking */
+.parking-grid {
+    display: grid;
+    /* Crear columnas automáticas de mínimo 100px */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    overflow-y: auto; /* Scroll si hay muchos autos */
+    padding: 5px;
+}
+
+/* Tarjeta de Espacio (El cuadradito del auto) */
+.slot-card {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: #fff;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.slot-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+/* Estados Visuales */
+.slot-card.disponible { 
+    border-color: #2ecc71; 
+    background-color: #eafaf1; 
+}
+.slot-card.disponible .slot-icon { color: #2ecc71; }
+
+.slot-card.ocupado { 
+    border-color: #e74c3c; 
+    background-color: #fdeaea; 
+}
+.slot-card.ocupado .slot-icon { color: #e74c3c; }
+
+.slot-number { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+.slot-icon { font-size: 1.8rem; margin-bottom: 5px; }
+.slot-status { font-size: 0.75rem; color: #7f8c8d; }
+
+/* === ESTILOS VISTA ESTUDIANTE (MOBILE FIRST) === */
+
+.student-container {
+    max-width: 600px;
+    margin: 0 auto; /* Centrado en desktop */
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Header */
+.student-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.student-header h1 { font-size: 1.5rem; margin: 0; color: #2c3e50; }
+.sede-selector select {
+    padding: 8px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background: white;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Tarjeta de Identidad Digital */
+/* Tarjeta Base (Por defecto ESTUDIANTE - Rojo) */
+.id-card-digital {
+    background: linear-gradient(135deg, #fc807e, #a11026 100%); /* Rojo UTP */
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    box-shadow: 0 8px 20px rgba(204, 46, 70, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* === NUEVO: Variante para DOCENTE (Azul) === */
+.id-card-digital.docente {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); /* Opción Cyan/Azul moderno */
+    /* O Opción Azul Institucional más serio: */
+    background: linear-gradient(135deg, #1e3c72 0%, #02112b 100%); 
+    
+    box-shadow: 0 8px 20px rgba(30, 60, 114, 0.3);
+}
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.card-logo { height: 30px; filter: brightness(0) invert(1); } /* Logo blanco */
+.card-role { 
+    background: rgba(255,255,255,0.2); 
+    padding: 4px 10px; 
+    border-radius: 10px; 
+    font-size: 0.7rem; 
+    letter-spacing: 1px;
+}
+.card-info label { font-size: 0.7rem; opacity: 0.8; display: block; }
+.card-info h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+.barcode-area {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 10px;
+}
+.barcode-area svg { width: 100%; max-height: 50px; }
+
+/* Semáforo */
+.traffic-light-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    text-align: center;
+    border: 1px solid #eee;
+}
+.traffic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+.status-circle { width: 15px; height: 15px; border-radius: 50%; display: inline-block; }
+.status-circle.green { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+.status-circle.red { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+.status-circle.gray { background: #bdc3c7; }
+
+#txtDisponibilidad { font-size: 2rem; margin: 10px 0; font-weight: 800; }
+
+/* Botón Acción */
+.btn-reservar-chat {
+    width: 100%;
+    padding: 18px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3);
+}
+.btn-reservar-chat:active { transform: scale(0.98); }
+
+/* Chatbot Embebido */
+.chatbot-page-container {
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    background: white;
+}
+.chatbot-body.embedded { flex: 1; overflow-y: auto; padding: 15px; background: #f4f6f8; }
+.quick-actions {
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    background: white;
+    border-top: 1px solid #eee;
+}
+.chip {
+    padding: 8px 15px;
+    background: #e1ecf4;
+    color: #2c3e50;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.chatbot-input-area {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+.chatbot-input-area input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+.chatbot-input-area button { background: none; border: none; font-size: 1.2rem; color: #cc2e46; cursor: pointer; margin-left: 10px; }
+
+
+/* Responsive para celular */
+@media (max-width: 992px) {
+    .gestor-container { grid-template-columns: 1fr; height: auto; }
+    .parking-grid { height: 500px; }
+}
+
 
 /* Responsive */
 @media (min-width: 992px) {

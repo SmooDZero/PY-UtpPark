@@ -1,4 +1,4 @@
-// Chatbot functionality
+handle// Chatbot functionality
 const chatbotModal = document.getElementById('chatbotModal');
 const chatbotMessages = document.getElementById('chatbotMessages');
 const chatbotInput = document.getElementById('chatbotInput');
@@ -158,27 +158,4 @@ async function loadChatbotHistory() {
   }
 }
 
-// Importar funciones necesarias
-async function authenticatedFetch(url, options = {}) {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    ...options.headers
-  };
-
-  const response = await fetch(`/api${url}`, {
-    ...options,
-    headers
-  });
-
-  if (response.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login.html';
-    return null;
-  }
-
-  return response;
-}
 

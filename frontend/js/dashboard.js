@@ -174,7 +174,7 @@ async function loadDisponibilidad() {
 
 async function loadEspaciosDisponibles() {
   try {
-    const response = await authenticatedFetch('/users/espacios/disponibilidad');
+    const response = await authenticatedFetch('/espacios/disponibilidad');
     if (!response) return;
     
     const data = await response.json();
