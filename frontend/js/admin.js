@@ -70,23 +70,27 @@ async function loadDashboardKPIs() {
     `;
     
     // Cargar datos reales de Python
-    try {
+ try {
         const res = await authenticatedFetch('/admin/dashboard-stats');
         if (res && res.ok) {
             const stats = await res.json();
-            
-            const total = stats.capacidad_total || 1; // Evitar división por cero
-            const libres = stats.espacios_libres;
-            const ocupados = total - libres;
-            const tasa = ((ocupados / total) * 100).toFixed(1);
 
-            // Pintar números
-            document.getElementById('kpi-ocupacion').textContent = `${ocupados} / ${total}`;
+            const total = stats.capacidad_total || 1;
+            const libres = stats.espacios_libres;
+            const ocupados = stats.espacios_ocupados;
+            const reservados = stats.espacios_reservados; // Dato nuevo
+
+            // KPI de Texto (Ocupación Real = Ocupados + Reservados)
+            const ocupacionReal = ocupados + reservados;
+            const tasa = ((ocupacionReal / total) * 100).toFixed(1);
+
+            // Pintar números en las tarjetas
+            document.getElementById('kpi-ocupacion').textContent = `${ocupacionReal} / ${total}`;
             document.getElementById('kpi-tasa').textContent = `${tasa}%`;
             document.getElementById('kpi-volumen').textContent = stats.autos_atendidos_hoy;
 
-            // Pintar gráfico
-            renderChartOcupacion(libres, ocupados);
+            // Pintar gráfico con los 3 datos
+            renderChartOcupacion(libres, ocupados, reservados);
         }
     } catch (e) {
         console.error("Error cargando KPIs:", e);
@@ -232,34 +236,47 @@ function renderUsuariosTables(lista) {
 // UTILIDADES GLOBALES
 // =========================================================
 
-// Lógica de Pestañas (Tabs)
-window.switchTab = function(tabName, btnElement) {
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(`tab-${tabName}`).style.display = 'block';
-    btnElement.classList.add('active');
-};
-
-// Gráfico Dona (Chart.js)
+// En frontend/js/admin.js -> renderChartOcupacion
+// 2. FUNCIÓN DEL GRÁFICO (AHORA CON 3 COLORES)
 let chartInstance = null;
-function renderChartOcupacion(libres, ocupados) {
-    const ctx = document.getElementById('chartOcupacion').getContext('2d');
-    if (chartInstance) chartInstance.destroy();
+
+function renderChartOcupacion(libres, ocupados, reservados) {
+    const canvas = document.getElementById('chartOcupacion');
+    if (!canvas) return; // Protección por si no existe el elemento
+
+    const ctx = canvas.getContext('2d');
     
+    // Destruir gráfico previo si existe para evitar superposición
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Libre', 'Ocupado'],
+            labels: ['Libre', 'Ocupado', 'Reservado'], // <--- 3 Etiquetas
             datasets: [{
-                data: [libres, ocupados],
-                backgroundColor: ['#2ecc71', '#e74c3c'],
+                data: [libres, ocupados, reservados], // <--- 3 Datos
+                backgroundColor: [
+                    '#2ecc71', // Verde
+                    '#e74c3c', // Rojo
+                    '#fbc02d'  // Amarillo (Nuevo)
+                ],
                 borderWidth: 0
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // <--- Importante para que se vea
-            plugins: { legend: { position: 'right' } }
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 10
+                    }
+                }
+            }
         }
     });
 }

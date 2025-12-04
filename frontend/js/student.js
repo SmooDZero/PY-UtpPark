@@ -227,30 +227,49 @@ window.irAlChatbot = function() {
 };
 
 async function actualizarSemaforo() {
-    const semaforoEl = document.getElementById('semaforoIcon');
-    const txtDisp = document.getElementById('txtDisponibilidad');
-    const txtDet = document.getElementById('txtDetalle');
-
-    if(!semaforoEl) return;
-
+    const trafficCard = document.querySelector('.traffic-light-card');
+    const actionArea = document.querySelector('.action-area');
+    
     try {
+        // 1. PRIMERO: Consultar si YO tengo una reserva activa
+        const user = getUser(); // Asegúrate de tener esta función auxiliar al final del archivo
+        const resProfile = await authenticatedFetch('/users/profile'); // Usamos profile o creamos ruta nueva
+        // (Nota: Como no tenemos ruta específica de "mi estado", usaremos la lógica del semáforo general
+        // pero idealmente el backend debería decirme mi estado. 
+        // TRUCO RÁPIDO: Consultamos al chatbot/backend por mi estado o asumimos por ahora visualización general)
+        
+        // CORRECCIÓN: Para hacerlo bien, necesitamos saber mi estado.
+        // Vamos a usar la ruta del perfil que ya trae datos del vehículo, 
+        // pero le falta traer la reserva. Por ahora, mantendremos el semáforo
+        // y agregaremos un aviso si el intento de reserva falla por el trigger.
+        
         const res = await authenticatedFetch('/espacios/disponibilidad');
-        if(!res || !res.ok) throw new Error("Fallo fetch");
+        if(!res.ok) throw new Error("Fallo fetch");
         
         const data = await res.json();
 
-        // Filtro flexible por nombre de sede
+        // Filtro por sede
         const espaciosSede = data.espacios.filter(e => 
             e.ubicacion.toLowerCase().includes(sedeSeleccionada.toLowerCase())
         );
 
+        // --- NUEVA LÓGICA: BUSCAR SI YO ESTOY AHÍ ---
+        // Como el endpoint público '/espacios/disponibilidad' devuelve ocupantes (si eres gestor)
+        // pero NO si eres alumno (por seguridad no deberíamos ver nombres), 
+        // dependemos de la respuesta del Chatbot para confirmar.
+        
+        // PINTAR SEMÁFORO NORMAL
         const total = espaciosSede.length;
         const disponibles = espaciosSede.filter(e => e.estado === 'disponible').length;
+        
+        const semaforoEl = document.getElementById('semaforoIcon');
+        const txtDisp = document.getElementById('txtDisponibilidad');
+        const txtDet = document.getElementById('txtDetalle');
 
         if (total === 0) {
             semaforoEl.className = 'status-circle gray';
             txtDisp.textContent = "Sin Datos";
-            txtDet.textContent = "No hay espacios registrados en esta sede.";
+            txtDet.textContent = "No hay espacios registrados.";
         } else if (disponibles > 0) {
             semaforoEl.className = 'status-circle green';
             txtDisp.textContent = "DISPONIBLE";
@@ -262,9 +281,9 @@ async function actualizarSemaforo() {
             txtDisp.style.color = "#e74c3c";
             txtDet.textContent = "No hay vacantes ahora.";
         }
+
     } catch (e) {
         console.error(e);
-        txtDisp.textContent = "--";
     }
 }
 
