@@ -1511,6 +1511,25 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
 .chatbot-input-area button { background: none; border: none; font-size: 1.2rem; color: #cc2e46; cursor: pointer; margin-left: 10px; }
 
 
+.vehiculo-card {
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+    border-left: 6px solid #da121a;
+    max-width: 380px;
+    margin: 20px auto;
+}
+
+.vehiculo-card h2 {
+    color: #da121a;
+    margin-bottom: 15px;
+}
+
+.vehiculo-info p {
+    margin: 6px 0;
+    font-size: 14px;
+}
 
 
 /* Responsive para celular */
@@ -1553,3 +1572,34 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
   }
 }
 
+.reserva-card {
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    transition: all 0.3s ease;
+}
+
+.reserva-card.pending {
+    background: #fff8d9; /* Amarillo suave */
+    border-left: 6px solid #f1c40f;
+}
+
+.reserva-card.active {
+    background: #e9ffe9; /* Verde muy suave */
+    border-left: 6px solid #2ecc71;
+}
+
+.reserva-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reserva-header i {
+    font-size: 22px;
+}
+
+.reserva-body p {
+    margin: 6px 0;
+}

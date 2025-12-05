@@ -1,5 +1,9 @@
 // frontend/js/student.js - CÓDIGO COMPLETO
 
+function normalizar(texto) {
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 // 1. VARIABLES GLOBALES
 let sedeSeleccionada = 'Arequipa'; 
 
@@ -7,10 +11,6 @@ let sedeSeleccionada = 'Arequipa';
 window.loadStudentSection = async function(sectionId) {
     const mainContent = document.getElementById('mainContent');
     const user = getUser(); // Usamos la función auxiliar del final
-
-    // Limpiamos contenido previo
-    mainContent.innerHTML = '';
-
     switch(sectionId) {
         case 'inicio':
         case 'dashboard': 
@@ -29,6 +29,9 @@ window.loadStudentSection = async function(sectionId) {
 
 // 3. VISTA: MI PASE (Home)
 async function renderMiPase(container, user) {
+
+    // limpiamos por seguridad
+    container.innerHTML = "";
     // Lógica para diferenciar Docente vs Estudiante
     const esDocente = parseInt(user.rol) === 3;
     const claseTarjeta = esDocente ? 'id-card-digital docente' : 'id-card-digital';
@@ -46,7 +49,8 @@ async function renderMiPase(container, user) {
                     <select id="selectSede" onchange="cambiarSede(this.value)">
                         <option value="Arequipa" ${sedeSeleccionada === 'Arequipa' ? 'selected' : ''}>Torre Arequipa</option>
                         <option value="Petit thouars" ${sedeSeleccionada === 'Petit thouars' ? 'selected' : ''}>Petit Thouars</option>
-                        <option value="Medicina" ${sedeSeleccionada === 'Medicina' ? 'selected' : ''}>F. Medicina</option>
+                        <option value="Medicina" ${sedeSeleccionada === 'Medicina' ? 'selected' : ''}> Medicina</option>
+                        <option value="Pacífico" ${sedeSeleccionada === 'Pacífico' ? 'selected' : ''}>Pacífico</option>
                     </select>
                 </div>
             </div>
@@ -103,45 +107,78 @@ async function renderMiPase(container, user) {
 
     // Cargar datos del Semáforo
     await actualizarSemaforo();
+    await renderTarjetaReserva(container);
 }
+
+
+
 
 // 4. VISTA: MI VEHÍCULO
-async function renderMiVehiculo(container, user) {
-    container.innerHTML = `<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Cargando vehículo...</div>`;
-    
+async function actualizarSemaforo() {
     try {
-        const res = await authenticatedFetch('/users/profile');
-        if (!res.ok) throw new Error("Error al cargar perfil");
+        const res = await authenticatedFetch('/espacios/disponibilidad');
+        if (!res.ok) throw new Error("Fallo fetch");
+
         const data = await res.json();
 
-        container.innerHTML = `
-            <div class="student-container">
-                <h2>Mi Vehículo Registrado</h2>
-                ${data.placa ? `
-                    <div class="vehicle-card">
-                        <div class="plate-display">${data.placa}</div>
-                        <div class="vehicle-details">
-                            <p><strong>Marca:</strong> ${data.marca}</p>
-                            <p><strong>Modelo:</strong> ${data.modelo}</p>
-                            <p><strong>Tipo:</strong> ${data.tipo}</p>
-                        </div>
-                        <div class="status-alert success">
-                            <i class="fas fa-check-circle"></i> Vehículo Habilitado
-                        </div>
-                    </div>
-                ` : `
-                    <div class="empty-state">
-                        <i class="fas fa-car-crash"></i>
-                        <p>No tienes un vehículo registrado.</p>
-                        <button class="btn-primary" onclick="alert('Contacta a Servicios Estudiantiles')">Solicitar Registro</button>
-                    </div>
-                `}
-            </div>
-        `;
+        const espaciosSede = data.espacios.filter(e =>
+            normalizar(e.ubicacion).includes(normalizar(sedeSeleccionada))
+        );
+
+        // PINTAR SEMÁFORO
+        const total = espaciosSede.length;
+        const disponibles = espaciosSede.filter(e => e.estado === 'disponible').length;
+
+        const semaforoEl = document.getElementById('semaforoIcon');
+        const txtDisp = document.getElementById('txtDisponibilidad');
+        const txtDet = document.getElementById('txtDetalle');
+
+        if (total === 0) {
+            semaforoEl.className = 'status-circle gray';
+            txtDisp.textContent = "Sin Datos";
+            txtDet.textContent = "No hay espacios registrados.";
+        } else if (disponibles > 0) {
+            semaforoEl.className = 'status-circle green';
+            txtDisp.textContent = "DISPONIBLE";
+            txtDisp.style.color = "#2ecc71";
+            txtDet.textContent = `Hay ${disponibles} espacios libres.`;
+        } else {
+            semaforoEl.className = 'status-circle red';
+            txtDisp.textContent = "LLENO";
+            txtDisp.style.color = "#e74c3c";
+            txtDet.textContent = "No hay vacantes ahora.";
+        }
+
     } catch (e) {
-        container.innerHTML = `<p class="error">Error cargando información.</p>`;
+        console.error("Error en actualizarSemaforo():", e);
     }
 }
+
+
+async function renderMiVehiculo(container, user) {
+
+    const res = await authenticatedFetch('/users/profile');
+    const data = await res.json();
+
+    container.innerHTML = `
+        <div class="vehiculo-card">
+            <h2>Mi Vehículo Registrado</h2>
+
+            ${!data.placa ? `
+                <p>No tiene ningún vehículo registrado.</p>
+            ` : `
+                <div class="vehiculo-info">
+                    <p><strong>Placa:</strong> ${data.placa}</p>
+                    <p><strong>Marca:</strong> ${data.marca}</p>
+                    <p><strong>Modelo:</strong> ${data.modelo}</p>
+                    <p><strong>Tipo:</strong> ${data.tipo}</p>
+                    <p><strong>Estado:</strong> Habilitado</p>
+                </div>
+            `}
+        </div>
+    `;
+}
+
 
 // 5. VISTA: CHATBOT INTEGRADO
 async function renderChatbotPage(container, user) {
@@ -191,6 +228,9 @@ async function enviarMensajeChat(texto) {
     const chatContainer = document.getElementById('chatbotMessagesPage');
     if(!chatContainer) return;
 
+    const user = getUser();
+    const idUsuario = user.id || user.user_id;
+
     chatContainer.innerHTML += `<div class="chatbot-message user"><p>${texto}</p></div>`;
     chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -201,17 +241,45 @@ async function enviarMensajeChat(texto) {
     try {
         const res = await authenticatedFetch('/chatbot/pregunta', {
             method: 'POST',
-            body: JSON.stringify({ pregunta: texto })
+            body: JSON.stringify({
+                pregunta: texto,
+                id_usuario: idUsuario,
+                id_edificio: obtenerIdEdificio(sedeSeleccionada)
+            })
         });
+
+        if (!res.ok) {
+            throw new Error("Respuesta no OK del servidor");
+        }
+
         const data = await res.json();
+
         document.getElementById(loadingId).remove();
         chatContainer.innerHTML += `<div class="chatbot-message bot"><p>${data.respuesta}</p></div>`;
         chatContainer.scrollTop = chatContainer.scrollHeight;
+
     } catch (e) {
-        if(document.getElementById(loadingId)) 
-            document.getElementById(loadingId).innerText = "Error de conexión.";
+        console.error("❌ Error en Chatbot:", e);
+        const el = document.getElementById(loadingId);
+        if (el) el.innerText = "Error de conexión con el servidor.";
     }
 }
+
+
+function obtenerIdEdificio(nombre) {
+    if (!nombre) return null;
+
+    nombre = nombre.toLowerCase();
+
+    if (nombre.includes("arequipa")) return 2;
+    if (nombre.includes("petit")) return 1;
+    if (nombre.includes("medicina")) return 4;
+    if (nombre.includes("pac")) return 3;
+
+    return null;
+}
+
+
 
 window.cambiarSede = function(nuevaSede) {
     sedeSeleccionada = nuevaSede;
@@ -226,69 +294,80 @@ window.irAlChatbot = function() {
     if(menuLink) menuLink.click();
 };
 
-async function actualizarSemaforo() {
-    const trafficCard = document.querySelector('.traffic-light-card');
-    const actionArea = document.querySelector('.action-area');
-    
-    try {
-        // 1. PRIMERO: Consultar si YO tengo una reserva activa
-        const user = getUser(); // Asegúrate de tener esta función auxiliar al final del archivo
-        const resProfile = await authenticatedFetch('/users/profile'); // Usamos profile o creamos ruta nueva
-        // (Nota: Como no tenemos ruta específica de "mi estado", usaremos la lógica del semáforo general
-        // pero idealmente el backend debería decirme mi estado. 
-        // TRUCO RÁPIDO: Consultamos al chatbot/backend por mi estado o asumimos por ahora visualización general)
-        
-        // CORRECCIÓN: Para hacerlo bien, necesitamos saber mi estado.
-        // Vamos a usar la ruta del perfil que ya trae datos del vehículo, 
-        // pero le falta traer la reserva. Por ahora, mantendremos el semáforo
-        // y agregaremos un aviso si el intento de reserva falla por el trigger.
-        
-        const res = await authenticatedFetch('/espacios/disponibilidad');
-        if(!res.ok) throw new Error("Fallo fetch");
-        
-        const data = await res.json();
 
-        // Filtro por sede
-        const espaciosSede = data.espacios.filter(e => 
-            e.ubicacion.toLowerCase().includes(sedeSeleccionada.toLowerCase())
-        );
-
-        // --- NUEVA LÓGICA: BUSCAR SI YO ESTOY AHÍ ---
-        // Como el endpoint público '/espacios/disponibilidad' devuelve ocupantes (si eres gestor)
-        // pero NO si eres alumno (por seguridad no deberíamos ver nombres), 
-        // dependemos de la respuesta del Chatbot para confirmar.
-        
-        // PINTAR SEMÁFORO NORMAL
-        const total = espaciosSede.length;
-        const disponibles = espaciosSede.filter(e => e.estado === 'disponible').length;
-        
-        const semaforoEl = document.getElementById('semaforoIcon');
-        const txtDisp = document.getElementById('txtDisponibilidad');
-        const txtDet = document.getElementById('txtDetalle');
-
-        if (total === 0) {
-            semaforoEl.className = 'status-circle gray';
-            txtDisp.textContent = "Sin Datos";
-            txtDet.textContent = "No hay espacios registrados.";
-        } else if (disponibles > 0) {
-            semaforoEl.className = 'status-circle green';
-            txtDisp.textContent = "DISPONIBLE";
-            txtDisp.style.color = "#2ecc71";
-            txtDet.textContent = `Hay ${disponibles} espacios libres.`;
-        } else {
-            semaforoEl.className = 'status-circle red';
-            txtDisp.textContent = "LLENO";
-            txtDisp.style.color = "#e74c3c";
-            txtDet.textContent = "No hay vacantes ahora.";
-        }
-
-    } catch (e) {
-        console.error(e);
-    }
-}
 
 // 7. UTILIDAD: OBTENER USUARIO (Para no depender de archivos externos)
 function getUser() {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : { nombre: 'Usuario', rol: 2 };
+}
+
+
+async function renderTarjetaReserva(container) {
+    try {
+        const res = await authenticatedFetch('/users/reserva');
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (!data.tiene_reserva) return;
+
+        const estado = data.estado;
+        const esActivo = estado === "activo";
+
+        let horaInicio = data.hora_inicio ? new Date(data.hora_inicio) : null;
+        let fechaSolicitud = new Date(data.fecha_solicitud);
+
+        let tarjeta = document.createElement("div");
+        tarjeta.id = "tarjetaReserva";
+
+        tarjeta.className = esActivo 
+            ? "reserva-card active" 
+            : "reserva-card pending";
+
+        tarjeta.innerHTML = `
+            <div class="reserva-header">
+                <i class="fas fa-ticket-alt"></i>
+                <h3>${esActivo ? "Reserva en Curso" : "Mi Reserva Actual"}</h3>
+            </div>
+
+            <div class="reserva-body">
+                <p><strong>📍 Edificio:</strong> ${data.nombre_edificio}</p>
+                <p><strong>🅿️ Espacio:</strong> ${data.numero_espacio}</p>
+                <p><strong>📅 Solicitud:</strong> ${fechaSolicitud.toLocaleString()}</p>
+
+                ${
+                    esActivo
+                    ? `<p><strong>⏳ Tiempo transcurrido:</strong> <span id="cronometroReserva">00:00:00</span></p>` 
+                    : `<p><em>🟡 Dirígete al edificio para validar tu ingreso</em></p>`
+                }
+            </div>
+        `;
+
+        container.appendChild(tarjeta);
+
+        if (esActivo && horaInicio) {
+            iniciarCronometro(horaInicio);
+        }
+
+    } catch (e) {
+        console.error("Error renderTarjetaReserva():", e);
+    }
+}
+
+function iniciarCronometro(inicio) {
+    function actualizar() {
+        const ahora = new Date();
+        let diff = Math.floor((ahora - inicio) / 1000);
+
+        const h = String(Math.floor(diff / 3600)).padStart(2, "0");
+        diff %= 3600;
+
+        const m = String(Math.floor(diff / 60)).padStart(2, "0");
+        const s = String(diff % 60).padStart(2, "0");
+
+        document.getElementById("cronometroReserva").textContent = `${h}:${m}:${s}`;
+    }
+
+    actualizar();
+    setInterval(actualizar, 1000);
 }
