@@ -157,27 +157,56 @@ async function actualizarSemaforo() {
 
 async function renderMiVehiculo(container, user) {
 
-    const res = await authenticatedFetch('/users/profile');
-    const data = await res.json();
+    // 1. Obtener datos del vehículo del usuario
+    const resPerfil = await authenticatedFetch('/users/profile');
+    const perfil = await resPerfil.json();
 
+    // 2. Obtener datos del espacio asignado (si existe)
+    const resReserva = await authenticatedFetch('/users/vehiculo_detalles');
+    const datos = await resReserva.json();
+
+    // Construir HTML final
     container.innerHTML = `
         <div class="vehiculo-card">
             <h2>Mi Vehículo Registrado</h2>
 
-            ${!data.placa ? `
+            ${!perfil.placa ? `
                 <p>No tiene ningún vehículo registrado.</p>
             ` : `
                 <div class="vehiculo-info">
-                    <p><strong>Placa:</strong> ${data.placa}</p>
-                    <p><strong>Marca:</strong> ${data.marca}</p>
-                    <p><strong>Modelo:</strong> ${data.modelo}</p>
-                    <p><strong>Tipo:</strong> ${data.tipo}</p>
+                    <p><strong>Placa:</strong> ${perfil.placa}</p>
+                    <p><strong>Marca:</strong> ${perfil.marca}</p>
+                    <p><strong>Modelo:</strong> ${perfil.modelo}</p>
+                    <p><strong>Tipo:</strong> ${perfil.tipo}</p>
                     <p><strong>Estado:</strong> Habilitado</p>
                 </div>
             `}
         </div>
+
+        <!-- SECCIÓN ESPACIO ASIGNADO -->
+        ${datos.tiene_reserva ? `
+            <div class="espacio-card">
+                <h3>Espacio Asignado</h3>
+
+                <p><strong>Estado de la Reserva:</strong> ${datos.estado}</p>
+                <p><strong>Edificio:</strong> ${datos.espacio.edificio}</p>
+                <p><strong>Piso:</strong> ${datos.espacio.piso}</p>
+                <p><strong>Número de Espacio:</strong> ${datos.espacio.numero}</p>
+                <p><strong>Tipo de Espacio:</strong> ${datos.espacio.tipo}</p>
+
+                <h4>Horarios</h4>
+                <p><strong>Reservado:</strong> ${datos.tiempos.fecha_solicitud ?? "—"}</p>
+                <p><strong>Hora de Llegada:</strong> ${datos.tiempos.hora_inicio ?? "Aún no ha llegado"}</p>
+            </div>
+        ` : `
+            <div class="espacio-card">
+                <h3>Espacio Asignado</h3>
+                <p>No tienes una reserva activa.</p>
+            </div>
+        `}
     `;
 }
+
 
 
 // 5. VISTA: CHATBOT INTEGRADO
@@ -199,8 +228,7 @@ async function renderChatbotPage(container, user) {
 
             <div class="quick-actions">
                 <button class="chip" onclick="enviarMensajeChat('Quiero reservar un espacio en ${sedeSeleccionada}')">🚗 Reservar Aquí</button>
-                <button class="chip" onclick="enviarMensajeChat('¿Hay espacios en Torre Arequipa?')">🔍 Disponibilidad</button>
-                <button class="chip" onclick="enviarMensajeChat('¿Cuáles son los horarios?')">🕒 Horarios</button>
+                <button class="chip" onclick="enviarMensajeChat('¿Hay espacios en ${sedeSeleccionada}?')">🔍 Disponibilidad</button>
             </div>
 
             <div class="chatbot-input-area">

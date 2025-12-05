@@ -1603,3 +1603,114 @@ body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);}
 .reserva-body p {
     margin: 6px 0;
 }
+/* ================================================= */
+/* VISTA ESTUDIANTE: MI VEHÍCULO Y RESERVA           */
+/* ================================================= */
+
+/* 1. Estilo General de las Tarjetas */
+.vehiculo-card, 
+.espacio-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra suave */
+    border: 1px solid #f0f0f0;
+    transition: transform 0.2s ease;
+}
+
+.vehiculo-card:hover,
+.espacio-card:hover {
+    transform: translateY(-2px); /* Efecto de elevación al tocar */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+/* 2. Encabezados */
+.vehiculo-card h2,
+.espacio-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #f4f4f4;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Iconos automáticos en los títulos (usando ::before) */
+.vehiculo-card h2::before {
+    content: '\f1b9'; /* Icono Car (FontAwesome) */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #3498db;
+}
+
+.espacio-card h3::before {
+    content: '\f015'; /* Icono Casa/Edificio */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #f39c12;
+}
+
+/* Subtítulos (Horarios) */
+.espacio-card h4 {
+    margin: 20px 0 10px 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-top: 1px dashed #eee;
+    padding-top: 15px;
+}
+
+/* 3. Filas de Información (p) */
+.vehiculo-info p,
+.espacio-card p {
+    display: flex;
+    justify-content: space-between; /* Separa Etiqueta <--> Valor */
+    align-items: center;
+    margin: 10px 0;
+    font-size: 0.95rem;
+    color: #555;
+    border-bottom: 1px solid #fafafa;
+    padding-bottom: 5px;
+}
+
+/* Estilo de las Etiquetas (Strong) */
+.vehiculo-info p strong,
+.espacio-card p strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* 4. Estilos Especiales para Datos Clave */
+
+/* Placa */
+.vehiculo-info p:first-child { /* Asumiendo que la placa es el primero */
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    font-family: monospace;
+    font-size: 1.1rem;
+}
+
+/* Estado de Reserva (Destacado) */
+.espacio-card p:first-of-type {
+    font-weight: bold;
+}
+
+/* 5. Estado Vacío (Cuando no hay reserva) */
+.espacio-card p:only-of-type { 
+    /* Si solo hay un párrafo (el mensaje de "No tienes reserva") */
+    text-align: center;
+    color: #95a5a6;
+    font-style: italic;
+    justify-content: center;
+    border: none;
+    padding: 20px;
+    background: #fdfdfd;
+    border-radius: 8px;
+}
