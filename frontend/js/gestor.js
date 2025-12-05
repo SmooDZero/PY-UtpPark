@@ -1,18 +1,19 @@
-// frontend/js/gestor.js
+// frontend/js/gestor.js - VERSIÓN AUTOMÁTICA & FLUIDA
 
 // === VARIABLES GLOBALES ===
-let usuarioSeleccionado = null; // Aquí guardamos al usuario buscado
+let usuarioSeleccionado = null;
+let timerBusqueda = null; // Para el auto-search
 
-// 1. ROUTER
+// 1. ROUTER PRINCIPAL
 const originalLoadSection = window.loadSection;
 window.loadSection = async function(sectionId) {
     const user = getUser();
-    const ROL_GESTOR = 4;
-
-    if (user && parseInt(user.rol) === ROL_GESTOR) {
+    // ID Rol 4 = Gestor
+    if (user && parseInt(user.rol) === 4) {
         if (sectionId === 'espacios' || sectionId === 'dashboard' || sectionId === 'inicio') {
             await loadGestorView();
         } else if (sectionId === 'usuarios') {
+            // Cargar admin.js si es necesario
             if (typeof window.routeAdminSections === 'function') window.routeAdminSections('usuarios');
             else loadScript('frontend/js/admin.js', () => window.routeAdminSections('usuarios'));
         }
@@ -21,7 +22,7 @@ window.loadSection = async function(sectionId) {
     }
 };
 
-// 2. VISTA PRINCIPAL
+// 2. VISTA PRINCIPAL (LA CASETA)
 async function loadGestorView() {
     const mainContent = document.getElementById('mainContent');
     mainContent.innerHTML = `
@@ -44,20 +45,20 @@ async function loadGestorView() {
 
                 <div class="scanner-box">
                     <h3><i class="fas fa-barcode"></i> Control de Acceso</h3>
-                    <p>Escanear DNI o Placa:</p>
+                    <p>Digita DNI o Placa (Búsqueda Auto):</p>
                     <div class="input-group-lg">
-                        <input type="text" id="inputIngreso" placeholder="DNI / PLACA" autocomplete="off">
+                        <input type="text" id="inputIngreso" placeholder="Ej: 7022..." autocomplete="off" autofocus>
                         <button id="btnValidar" class="btn-scan"><i class="fas fa-search"></i></button>
                     </div>
                     
                     <div id="cardUsuario" class="user-found-card hidden">
                         <div class="found-header">
-                            <span class="badge-role" id="foundRol">ALUMNO</span>
+                            <span class="badge-role" id="foundRol">USUARIO</span>
                             <button class="btn-close-found" onclick="limpiarSeleccion()">&times;</button>
                         </div>
-                        <h4 id="foundNombre">Nombre Usuario</h4>
-                        <p id="foundPlaca"><i class="fas fa-car"></i> ABC-123</p>
-                        <div id="foundStatus" class="found-status">Seleccione un espacio en el mapa para asignar</div>
+                        <h4 id="foundNombre">Nombre...</h4>
+                        <p id="foundPlaca"><i class="fas fa-car"></i> ...</p>
+                        <div id="foundStatus" class="found-status">...</div>
                     </div>
                 </div>
 
@@ -88,14 +89,15 @@ async function loadGestorView() {
     setupGestorEvents();
 }
 
-// 3. LÓGICA DE BÚSQUEDA (Escáner)
+// 3. EVENTOS (Aquí está la magia de la automatización)
 function setupGestorEvents() {
-    const btn = document.getElementById('btnValidar');
     const input = document.getElementById('inputIngreso');
+    const btn = document.getElementById('btnValidar');
 
+    // Función de búsqueda
     const realizarBusqueda = async () => {
         const codigo = input.value.trim();
-        if (!codigo) return;
+        if (codigo.length < 3) return; // No buscar si es muy corto
 
         try {
             const res = await authenticatedFetch('/gestor/scan', {
@@ -106,43 +108,66 @@ function setupGestorEvents() {
             if (res.ok) {
                 const data = await res.json();
                 mostrarUsuarioEncontrado(data);
+                // Feedback auditivo o visual opcional aquí
             } else {
-                alert("Usuario no encontrado o no pertenece a esta sede.");
-                limpiarSeleccion();
+                // Si no encuentra, limpiamos silenciosamente o mostramos error discreto
+                if (codigo.length >= 8) { // Solo avisar si ya escribió un DNI completo
+                    console.log("Usuario no encontrado");
+                }
             }
-        } catch (e) {
-            console.error(e);
-            alert("Error de conexión");
-        }
+        } catch (e) { console.error(e); }
     };
 
+    // A. BÚSQUEDA AUTOMÁTICA AL ESCRIBIR
+    input.addEventListener('input', (e) => {
+        const val = e.target.value;
+        
+        // Si borra todo, limpiar tarjeta
+        if (val === '') limpiarSeleccion();
+
+        // 1. Si tiene 8 dígitos (DNI exacto) o formato placa (6-7), buscar YA
+        if (val.length === 8 || (val.length >= 6 && val.includes('-'))) {
+            clearTimeout(timerBusqueda);
+            realizarBusqueda();
+        } 
+        // 2. Si no, esperar medio segundo a que termine de escribir (Debounce)
+        else {
+            clearTimeout(timerBusqueda);
+            timerBusqueda = setTimeout(realizarBusqueda, 600);
+        }
+    });
+
+    // B. Clic manual en botón lupa
     btn.onclick = realizarBusqueda;
-    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') realizarBusqueda() });
 }
 
 function mostrarUsuarioEncontrado(data) {
     const card = document.getElementById('cardUsuario');
     const rolMap = { 2: 'ALUMNO', 3: 'DOCENTE', 1: 'ADMIN' };
     
-    // Guardamos en memoria global
     usuarioSeleccionado = data;
 
-    // Pintamos la tarjeta
+    // Llenar datos
     document.getElementById('foundNombre').textContent = data.usuario.nombre;
-    document.getElementById('foundPlaca').innerHTML = `<i class="fas fa-car"></i> ${data.usuario.placa} (${data.usuario.modelo || 'Generico'})`;
-    document.getElementById('foundRol').textContent = rolMap[data.usuario.rol] || 'USUARIO';
+    document.getElementById('foundPlaca').innerHTML = `<i class="fas fa-car"></i> ${data.usuario.placa} (${data.usuario.modelo || '?'})`;
+    document.getElementById('foundRol').textContent = rolMap[data.usuario.rol] || 'INVITADO';
     
-    // Cambiar color según acción sugerida
+    // Configurar estado y color
     const statusDiv = document.getElementById('foundStatus');
+    const input = document.getElementById('inputIngreso');
+
     if (data.accion_sugerida === 'confirmar_ingreso') {
-        statusDiv.innerHTML = `<span style="color:green">¡TIENE RESERVA!</span> <br> Haga clic en <b>${data.datos_accion.espacio_nro}</b> para confirmar.`;
+        statusDiv.innerHTML = `<span style="color:green; font-weight:bold">¡TIENE RESERVA!</span><br>Confirme haciendo clic en el mapa <b>(Espacio ${data.datos_accion.espacio_nro})</b>`;
         statusDiv.style.background = "#e8f5e9";
+        input.style.borderColor = "#2ecc71"; // Borde verde
     } else if (data.accion_sugerida === 'registrar_salida') {
-        statusDiv.innerHTML = `<span style="color:blue">EN SALIDA</span> <br> Haga clic en su espacio para liberar.`;
+        statusDiv.innerHTML = `<span style="color:#1976d2; font-weight:bold">AUTO DENTRO</span><br>Clic en su espacio para dar SALIDA.`;
         statusDiv.style.background = "#e3f2fd";
+        input.style.borderColor = "#2196f3"; // Borde azul
     } else {
-        statusDiv.innerHTML = `SIN RESERVA <br> <i class="fas fa-hand-point-right"></i> Toque un espacio <b>VERDE</b> para asignar.`;
+        statusDiv.innerHTML = `<span style="color:#e67e22; font-weight:bold">SIN RESERVA</span><br>Seleccione un espacio VERDE para asignar.`;
         statusDiv.style.background = "#fff3e0";
+        input.style.borderColor = "#ff9800"; // Borde naranja
     }
 
     card.classList.remove('hidden');
@@ -151,110 +176,91 @@ function mostrarUsuarioEncontrado(data) {
 function limpiarSeleccion() {
     usuarioSeleccionado = null;
     document.getElementById('cardUsuario').classList.add('hidden');
+    document.getElementById('inputIngreso').style.borderColor = "#ccc"; // Reset borde
     document.getElementById('inputIngreso').value = '';
     document.getElementById('inputIngreso').focus();
 }
 
-// 4. LÓGICA DE CLIC EN EL MAPA (Asignación)
+// 4. GESTIÓN DEL MAPA (Los 3 Escenarios)
 async function gestionarEspacio(espacio) {
     
-    // CASO 1: ASIGNAR A USUARIO SELECCIONADO (El Input manda)
+    // A. INGRESO MANUAL (Tengo usuario cargado, Espacio Libre)
     if (usuarioSeleccionado && espacio.estado === 'disponible') {
         if (confirm(`¿Asignar espacio ${espacio.numero} a ${usuarioSeleccionado.usuario.nombre}?`)) {
             await ejecutarAccionBackend('entrada_nueva', {
                 id_usuario: usuarioSeleccionado.usuario.id,
                 id_espacio: espacio.id
             });
-            limpiarSeleccion(); // Resetear para el siguiente
+            agregarLog(`Entrada Manual: ${usuarioSeleccionado.usuario.nombre}`, 'entrada');
+            limpiarSeleccion();
         }
         return;
     }
 
-    // CASO 2: CONFIRMAR RESERVA (El Usuario ya tiene sitio asignado)
+    // B. CONFIRMAR RESERVA (Usuario cargado, Tiene reserva ahí)
     if (usuarioSeleccionado && usuarioSeleccionado.accion_sugerida === 'confirmar_ingreso') {
-        // Verificar si el gestor hizo clic en el espacio CORRECTO
         if (espacio.id == usuarioSeleccionado.datos_accion.espacio_id) {
-            if(confirm("¿Confirmar ingreso de reserva?")) {
-                await ejecutarAccionBackend('entrada_reserva', {
-                    id_asignacion: usuarioSeleccionado.datos_accion.id_asignacion,
-                    id_espacio: espacio.id
-                });
-                limpiarSeleccion();
-            }
+            // Confirmación rápida
+            await ejecutarAccionBackend('entrada_reserva', {
+                id_asignacion: usuarioSeleccionado.datos_accion.id_asignacion,
+                id_espacio: espacio.id
+            });
+            agregarLog(`Reserva Confirmada: ${usuarioSeleccionado.usuario.nombre}`, 'entrada');
+            limpiarSeleccion();
         } else {
-            alert(`Error: Este usuario tiene reservado el espacio ${usuarioSeleccionado.datos_accion.espacio_nro}, no este.`);
+            alert(`Este usuario va al espacio ${usuarioSeleccionado.datos_accion.espacio_nro}, no a este.`);
         }
         return;
     }
 
-    // CASO 3: LIBERAR ESPACIO (Salida)
+    // C. SALIDA RÁPIDA (Sin escanear, solo clic en rojo)
     if (espacio.estado === 'ocupado') {
-        const nombreOcupante = espacio.ocupante_nombre || "Desconocido";
-        if (confirm(`El espacio ${espacio.numero} está ocupado por ${nombreOcupante}.\n¿Registrar SALIDA y liberar?`)) {
-            // Necesitamos el ID de asignacion que viene del mapa (Paso 1)
+        const nombre = espacio.ocupante_nombre || "Anónimo";
+        if (confirm(`SALIDA: ¿Liberar el espacio ${espacio.numero} (${nombre})?`)) {
             if (espacio.id_asignacion) {
+                // Salida oficial con registro
                 await ejecutarAccionBackend('salida', {
                     id_asignacion: espacio.id_asignacion,
                     id_espacio: espacio.id
                 });
+                agregarLog(`Salida: ${nombre}`, 'salida');
             } else {
-                // Fallback manual si no hay asignacion vinculada
+                // Salida manual (limpieza)
                 await toggleEspacioManual(espacio.id, 'disponible');
+                agregarLog(`Liberación manual: Espacio ${espacio.numero}`, 'alerta');
             }
         }
         return;
     }
-
-    // CASO 4: OCUPACIÓN MANUAL GENÉRICA (Sin DNI)
-    if (!usuarioSeleccionado && espacio.estado === 'disponible') {
-        if(confirm(`Espacio ${espacio.numero}: ¿Marcar como OCUPADO (Anónimo/Invitado)?`)) {
-            await toggleEspacioManual(espacio.id, 'ocupado');
-        }
-    }
 }
 
-// Helpers de conexión
-async function ejecutarAccionBackend(tipo, datos) {
-    try {
-        const res = await authenticatedFetch('/gestor/ejecutar-accion', {
-            method: 'POST',
-            body: JSON.stringify({ tipo, ...datos })
-        });
-        if (res.ok) {
-            await refreshMap();
-              let textoLog = "Acción completada";
-              if (tipo.includes('entrada')) textoLog = "Entrada registrada";
-              if (tipo === 'salida') textoLog = "Salida registrada";
-    agregarLog(textoLog, tipo === 'salida' ? 'salida' : 'entrada');
-            alert("Acción registrada correctamente.");
-        } else {
-            alert("Error al procesar acción.");
-        }
-    } catch (e) { console.error(e); }
-}
-
-async function toggleEspacioManual(id, estado) {
-    await authenticatedFetch('/gestor/cambiar-estado', {
-        method: 'POST',
-        body: JSON.stringify({ id_espacio: id, nuevo_estado: estado })
-    });
-    await refreshMap();
-const accion = estado === 'ocupado' ? 'Ocupación manual' : 'Liberación manual';
-agregarLog(`${accion} en espacio (ID: ${id})`, 'info');
-}
-
-// ... (refreshMap, renderMap, updateKPIs, loadScript, getUser se mantienen igual o se copian del anterior) ...
-// Para ahorrar espacio, asegúrate de incluir refreshMap, renderMap y updateKPIs aquí abajo
-// Recuerda en renderMap leer: espacio.ocupante_nombre y espacio.id_asignacion
+// 5. RENDERIZADO Y KPIs
 async function refreshMap() {
     try {
         const res = await authenticatedFetch('/espacios/disponibilidad');
         if (res.ok) {
             const data = await res.json();
             renderMap(data.espacios);
-            updateKPIs(data.estadisticas, data.espacios);
+            updateKPIs(data.espacios); // <--- AQUÍ SE LLENA LA DATA
         }
-    } catch(e) {}
+    } catch(e) { console.error(e); }
+}
+
+function updateKPIs(lista) {
+    if (!lista) return;
+    
+    // Contamos según lo que viene de BD
+    const reservados = lista.filter(e => e.estado === 'espera' || e.estado_reserva === 'espera').length;
+    
+    // Disponibles reales (Verdes puros)
+    const disponibles = lista.filter(e => e.estado === 'disponible' && e.estado_reserva !== 'espera').length;
+    
+    // Ocupados (Rojos)
+    const ocupados = lista.filter(e => e.estado === 'ocupado').length;
+
+    document.getElementById('lbl-libres').textContent = disponibles;
+    document.getElementById('lbl-ocupados').textContent = ocupados;
+    document.getElementById('lbl-reservados').textContent = reservados;
 }
 
 function renderMap(espacios) {
@@ -264,108 +270,90 @@ function renderMap(espacios) {
 
     espacios.forEach(e => {
         const card = document.createElement('div');
-        
-        // --- LÓGICA DE COLORES CORREGIDA ---
-        let clase = 'disponible'; // Por defecto verde
-        let iconoAdicional = '';
+        let clase = 'disponible';
+        let iconoExtra = '';
 
-        if (e.estado === 'ocupado') {
-            clase = 'ocupado'; // Rojo
-        } 
-        // Si el estado físico es 'espera' O hay una reserva en camino
+        if (e.estado === 'ocupado') clase = 'ocupado';
         else if (e.estado === 'espera' || e.estado_reserva === 'espera') {
-            clase = 'reservado'; // Amarillo (Clase nueva)
-            iconoAdicional = '<i class="fas fa-clock" style="font-size:0.8rem; margin-left:5px"></i>';
+            clase = 'reservado';
+            iconoExtra = '<i class="fas fa-clock"></i>';
         }
 
         card.className = `slot-card ${clase}`;
         
-        // Icono inteligente según tipo
         let icon = 'car';
         if (e.tipo === 'moto') icon = 'motorcycle';
         if (e.tipo.includes('disca')) icon = 'wheelchair';
 
-        // Tooltip con información
-        let titulo = `Espacio ${e.numero}: ${e.estado.toUpperCase()}`;
-        if (e.ocupante_nombre) titulo += `\nOcupado por: ${e.ocupante_nombre}`;
+        const quien = e.ocupante_nombre ? `\n👤 ${e.ocupante_nombre}` : '';
+        const placa = e.ocupante_placa ? e.ocupante_placa : e.tipo;
 
+        card.title = `Espacio ${e.numero} (${e.estado})${quien}`;
         card.innerHTML = `
-            <div class="slot-number">${e.numero} ${iconoAdicional}</div>
+            <div class="slot-number">${e.numero} <span style="font-size:0.7em">${iconoExtra}</span></div>
             <div class="slot-icon"><i class="fas fa-${icon}"></i></div>
-            <small>${e.ocupante_placa || e.tipo}</small>
+            <small>${placa}</small>
         `;
-        
-        card.title = titulo;
         card.onclick = () => gestionarEspacio(e);
         grid.appendChild(card);
     });
 }
 
+// Helpers
+// En frontend/js/gestor.js
 
+async function ejecutarAccionBackend(tipo, datos) {
+    try {
+        const res = await authenticatedFetch('/gestor/ejecutar-accion', {
+            method: 'POST',
+            body: JSON.stringify({ tipo, ...datos })
+        });
+        
+        const respuesta = await res.json(); // Leemos la respuesta JSON siempre
 
-function updateKPIs(listaEspacios) {
-    // Protección contra listas vacías
-    if (!listaEspacios) return;
-
-    // 1. Contar RESERVADOS (Amarillos)
-    // Son los que están en estado físico 'espera' O tienen una reserva activa tipo 'espera'
-    const reservados = listaEspacios.filter(e => 
-        e.estado === 'espera' || e.estado_reserva === 'espera'
-    ).length;
-
-    // 2. Contar DISPONIBLES (Verdes)
-    // Estrictamente disponibles y SIN reserva pendiente
-    const disponibles = listaEspacios.filter(e => 
-        e.estado === 'disponible' && e.estado_reserva !== 'espera'
-    ).length;
-    
-    // 3. Contar OCUPADOS (Rojos)
-    // El resto (Total menos verdes y amarillos)
-    const ocupados = listaEspacios.length - disponibles - reservados;
-
-    // 4. Inyectar en el HTML
-    const elLibres = document.getElementById('lbl-libres');
-    const elOcupados = document.getElementById('lbl-ocupados');
-    const elReservados = document.getElementById('lbl-reservados');
-
-    if(elLibres) elLibres.textContent = disponibles;
-    if(elOcupados) elOcupados.textContent = ocupados;
-    if(elReservados) elReservados.textContent = reservados;
+        if (res.ok) {
+            await refreshMap();
+            // Log visual
+            let textoLog = "Acción completada";
+            if (tipo.includes('entrada')) textoLog = "Entrada registrada";
+            if (tipo === 'salida') textoLog = "Salida registrada";
+            agregarLog(textoLog, tipo === 'salida' ? 'salida' : 'entrada');
+            
+            alert(respuesta.mensaje || "Acción registrada correctamente.");
+        } else {
+            // AQUÍ ESTÁ EL CAMBIO: Mostramos el error específico
+            alert(respuesta.error || "Error desconocido en el servidor.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error de conexión con el sistema.");
+    }
 }
 
+async function toggleEspacioManual(id, estado) {
+    await authenticatedFetch('/gestor/cambiar-estado', {
+        method: 'POST', body: JSON.stringify({ id_espacio: id, nuevo_estado: estado })
+    });
+    await refreshMap();
+}
 
-// --- FUNCIÓN DE LOG VISUAL (ACTIVIDAD RECIENTE) ---
-function agregarLog(mensaje, tipo = 'info') {
+function agregarLog(msg, tipo) {
     const lista = document.getElementById('listaMovimientos');
-    if (!lista) return;
-
-    // Crear el elemento de lista
+    if(!lista) return;
     const li = document.createElement('li');
-    const hora = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    const hora = new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
+    let color = tipo === 'entrada' ? 'green' : (tipo === 'salida' ? 'blue' : 'gray');
     
-    // Icono según tipo
-    let icono = '<i class="fas fa-info-circle"></i>';
-    if (tipo === 'entrada') icono = '<i class="fas fa-car-side" style="color:green"></i>';
-    if (tipo === 'salida') icono = '<i class="fas fa-sign-out-alt" style="color:blue"></i>';
-    if (tipo === 'alerta') icono = '<i class="fas fa-exclamation-triangle" style="color:orange"></i>';
-
-    li.innerHTML = `
-        <span class="log-time">${hora}</span>
-        <span class="log-msg">${icono} ${mensaje}</span>
-    `;
+    li.innerHTML = `<span style="color:#999; font-size:0.8em">${hora}</span> <span style="color:${color}">${msg}</span>`;
+    li.style.borderBottom = "1px solid #f0f0f0";
+    li.style.padding = "5px 0";
     
-    // Estilo básico en JS para el item (puedes pasarlo a CSS luego)
-    li.style.borderBottom = '1px solid #eee';
-    li.style.padding = '8px 0';
-    li.style.fontSize = '0.9rem';
-    li.style.display = 'flex';
-    li.style.gap = '10px';
-
-    // Insertar al principio (el más reciente arriba)
     lista.prepend(li);
+}
 
-    // Mantener solo los últimos 5
-    if (lista.children.length > 5) {
-        lista.removeChild(lista.lastChild);
-    }
+function loadScript(src, cb) {
+    const s = document.createElement('script'); s.src=src; s.onload=cb; document.body.appendChild(s);
+}
+function getUser() {
+    const s = localStorage.getItem('user'); return s ? JSON.parse(s) : null;
 }
