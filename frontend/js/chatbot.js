@@ -1,4 +1,4 @@
-handle// Chatbot functionality
+// Chatbot functionality
 const chatbotModal = document.getElementById('chatbotModal');
 const chatbotMessages = document.getElementById('chatbotMessages');
 const chatbotInput = document.getElementById('chatbotInput');
