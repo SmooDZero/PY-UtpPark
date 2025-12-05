@@ -183,27 +183,7 @@ async function renderMiVehiculo(container, user) {
             `}
         </div>
 
-        <!-- SECCIÓN ESPACIO ASIGNADO -->
-        ${datos.tiene_reserva ? `
-            <div class="espacio-card">
-                <h3>Espacio Asignado</h3>
-
-                <p><strong>Estado de la Reserva:</strong> ${datos.estado}</p>
-                <p><strong>Edificio:</strong> ${datos.espacio.edificio}</p>
-                <p><strong>Piso:</strong> ${datos.espacio.piso}</p>
-                <p><strong>Número de Espacio:</strong> ${datos.espacio.numero}</p>
-                <p><strong>Tipo de Espacio:</strong> ${datos.espacio.tipo}</p>
-
-                <h4>Horarios</h4>
-                <p><strong>Reservado:</strong> ${datos.tiempos.fecha_solicitud ?? "—"}</p>
-                <p><strong>Hora de Llegada:</strong> ${datos.tiempos.hora_inicio ?? "Aún no ha llegado"}</p>
-            </div>
-        ` : `
-            <div class="espacio-card">
-                <h3>Espacio Asignado</h3>
-                <p>No tienes una reserva activa.</p>
-            </div>
-        `}
+        
     `;
 }
 
