@@ -21,7 +21,7 @@ async function loadDashboardKPIs() {
     const content = document.getElementById('mainContent');
     content.innerHTML = `
         <div class="dashboard-header">
-            <h2>KPIs de Operación y Uso</h2>
+            <h2>Operación y Uso</h2>
             <p class="subtitle">Métricas de eficiencia del estacionamiento universitario</p>
         </div>
         <div class="stats-grid">
